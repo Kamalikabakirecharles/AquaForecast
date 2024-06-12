@@ -1,0 +1,137 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | Environmental Factors{% endblock %}
+{% block content %}
+{% load static %}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script src="{% static '/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}" integrity="sha384-mCsbSKBdIJqE70OWWlhXqoDz/YCKaBSqBE/oxFn3XwJduJ++KG/Rnp73RsmIdFJL" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<script>
+  // Function to show the modal dialog
+  function showModal(message, isSuccess) {
+    const modal = new bootstrap.Modal(document.getElementById('saveStatusModal'));
+    const modalTitle = document.getElementById('saveStatusModalTitle');
+    const modalBody = document.getElementById('saveStatusModalBody');
+    modalTitle.innerText = isSuccess ? 'Success' : 'Error';
+    modalBody.innerText = message;
+    modal.show();
+  }
+
+  // Submit form function with AJAX
+  function submitForm() {
+      const form = document.getElementById('weatherForm');
+      const formData = new FormData(form);
+      fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          showModal(data.message, data.success);
+      })
+      .catch(error => {
+          showModal('An error occurred while saving weather data', false);
+      });
+  }
+</script>
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>Environmental Factors</h4>
+      <p>Content for Environmental Factors</p>
+    </div>
+    <div class="col s12 m6 l4">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">City</span>
+          <img src="{% static 'images/Rwanda-Kigali.png' %}" style="max-width: 50%;">
+          <p>{{ weather.name }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col s12 m6 l4">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Temperature</span>
+          <img src="{% static 'images/weather/Temperature.png' %}" style="max-width: 50%;">
+          <p>{{ weather.main.temp }} °C</p>
+        </div>
+      </div>
+    </div>
+    <div class="col s12 m6 l4">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Condition</span>
+          <img src="{% static 'images/weather/' %}{{ weather_image }}" alt="{{ weather_category }}" style="max-width: 75%;">
+          <p>{{ weather_category }}</p>
+        </div>
+      </div>
+    </div>    
+    <div class="col s12 m6 l4">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Humidity</span>
+          <img src="{% static 'images/weather/Humidity.png' %}" style="max-width: 45%;">
+          <p>{{ weather.main.humidity }}%</p>
+        </div>
+      </div>
+    </div>
+    <div class="col s12 m6 l4">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Wind Speed</span>
+          <img src="{% static 'images/weather/wind.png' %}" style="max-width: 43%;">
+          <p>{{ weather.wind.speed }} m/s</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12">
+      <div class="center-align">
+        <form id="weatherForm" onsubmit="event.preventDefault(); submitForm();" method="post" action="{% url 'save_weather_data' %}">
+          {% csrf_token %}
+          <input type="hidden" name="city" value="{{ initial_data.city }}">
+          <input type="hidden" name="temperature" value="{{ initial_data.temperature }}">
+          <input type="hidden" name="condition" value="{{ initial_data.condition }}">
+          <input type="hidden" name="humidity" value="{{ initial_data.humidity }}">
+          <input type="hidden" name="wind_speed" value="{{ initial_data.wind_speed }}">
+          <div class="center-align">
+              <button type="submit" class="waves-effect waves-light btn">
+                  <i class="material-icons left">save</i>Save Weather Data
+              </button>
+          </div>
+        </form>        
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12">
+      &nbsp; <!-- Add some space below the button -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal Dialog for Save Status -->
+<div class="modal" id="saveStatusModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="saveStatusModalTitle">Save Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="saveStatusModalBody">
+        <!-- Save status message will be displayed here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
