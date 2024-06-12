@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.conf import settings
 from .models import WeatherData  
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 def index(request):
@@ -32,6 +33,9 @@ def spatial_analysis(request):
 
 def environmental_factors(request):
     return render(request, 'environmental_factors.html')
+
+def weather(request):
+    return render(request, 'weather.html')
 
 
 def signup(request):
@@ -79,34 +83,42 @@ def user_logout(request):
     logout(request)
     return redirect('login')
 
-def get_weather_data():
+def get_weather_data(city):
     api_key = settings.OPENWEATHERMAP_API_KEY
-    city = "kigali"
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     response = requests.get(url)
     return response.json()
 
-def environmental_factors(request):
-    weather_data = get_weather_data()
-    weather_code = weather_data.get('weather', [{}])[0].get('id', 800)  # Default to Clear if weather code is not available
-    category, image = map_weather_conditions(weather_code)
+
+def weather(request):
+    cities = [
+        "Kigali", "Butare", "Gisenyi", "Ruhengeri", "Rwamagana",
+        "Kibuye", "Byumba", "Cyangugu", "Nyanza", "Kibungo"
+    ]
     
-    # Pass weather data as initial values to the form
-    initial_data = {
-        'city': weather_data.get('name', ''),
-        'temperature': weather_data.get('main', {}).get('temp', ''),
-        'condition': category,
-        'humidity': weather_data.get('main', {}).get('humidity', ''),
-        'wind_speed': weather_data.get('wind', {}).get('speed', ''),
-    }
+    weather_data_list = []
+    
+    for city in cities:
+        weather_data = get_weather_data(city)
+        weather_code = weather_data.get('weather', [{}])[0].get('id', 800)  # Default to Clear if weather code is not available
+        category, image = map_weather_conditions(weather_code)
+        
+        weather_data_list.append({
+            'city': city,
+            'temperature': weather_data.get('main', {}).get('temp', ''),
+            'condition': category,
+            'humidity': weather_data.get('main', {}).get('humidity', ''),
+            'wind_speed': weather_data.get('wind', {}).get('speed', ''),
+            'weather_category': category,
+            'weather_image': image,
+        })
     
     context = {
-        'weather': weather_data,
-        'weather_category': category,
-        'weather_image': image,
-        'initial_data': initial_data  # Pass initial data to the template
+        'weather_data_list': weather_data_list
     }
-    return render(request, 'environmental_factors.html', context)
+    
+    return render(request, 'weather.html', context)
+
 
 
 def map_weather_conditions(weather_code):
@@ -127,24 +139,24 @@ def map_weather_conditions(weather_code):
     else:
         return "Unknown", "default.png"  # Handle unknown conditions
     
+@csrf_exempt
 def save_weather_data(request):
     if request.method == 'POST':
-        # Extract weather data from the request
-        city = request.POST.get('city')
-        temperature = request.POST.get('temperature')
-        condition = request.POST.get('condition')
-        humidity = request.POST.get('humidity')
-        wind_speed = request.POST.get('wind_speed')
-        
+        cities = request.POST.getlist('cities[]')
+        temperatures = request.POST.getlist('temperatures[]')
+        conditions = request.POST.getlist('conditions[]')
+        humidities = request.POST.getlist('humidities[]')
+        wind_speeds = request.POST.getlist('wind_speeds[]')
+
         try:
-            # Save the weather data to the database
-            WeatherData.objects.create(
-                city=city,
-                temperature=temperature,
-                condition=condition,
-                humidity=humidity,
-                wind_speed=wind_speed
-            )
+            for i in range(len(cities)):
+                WeatherData.objects.create(
+                    city=cities[i],
+                    temperature=temperatures[i],
+                    condition=conditions[i],
+                    humidity=humidities[i],
+                    wind_speed=wind_speeds[i]
+                )
             return JsonResponse({'success': True, 'message': 'Weather data saved successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
