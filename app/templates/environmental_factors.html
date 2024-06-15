@@ -1,6 +1,7 @@
-{% extends "dashboard.html" %}
-{% block title %}AquaForecast | Environmental Factors {% endblock %}
-{% block content %}
+{% extends "dashboard.html" %} {% block title %}AquaForecast | Environmental
+Factors {% endblock %} {% block breadcrumb %}
+<a class="breadcrumb">Environmental Factors</a>
+{% endblock %} {% block content %}
 <div class="container">
   <div class="row">
     <div class="col s12">
@@ -9,15 +10,19 @@
   </div>
   <div class="row">
     <div class="col s12 m6">
-      <div class="card">
-        <div class="card-content">
-          <span class="card-title">Select Saved File</span>
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+          Select Saved File
+        </div>
+        <div class="card-content lighten-3">
           <select id="savedFilesDropdown" class="browser-default">
             <option value="" disabled selected>Select a file</option>
             {% for file in saved_files %}
             <option value="{{ file.id }}">{{ file.file.name }}</option>
             {% endfor %}
           </select>
+        </div>
+        <div class="card-action center-align">
           <button id="fetchEDAButton" class="btn blue" onclick="fetchEDA()">
             Fetch EDA Visualizations
           </button>
@@ -25,16 +30,23 @@
       </div>
     </div>
   </div>
+
   <div class="row">
     <div class="col s12">
-      <div class="card">
-        <div class="card-content">
-          <span class="card-title">EDA Visualizations</span>
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+          EDA Visualizations
+        </div>
+        <div class="card-content lighten-3">
           <div id="edaVisualizations" class="row">
             <!-- Visualizations fetched via AJAX will be displayed here -->
           </div>
-          <div id="generatePDFButton" style="display: none;">
-            <button class="btn blue" onclick="generatePDF()">Generate PDF Report</button>
+        </div>
+        <div class="card-action center-align">
+          <div id="generatePDFButton" style="display: none">
+            <button class="btn blue" onclick="generatePDF()">
+              Generate PDF Report
+            </button>
           </div>
         </div>
       </div>
@@ -82,7 +94,8 @@
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetch EDA response:", data);
-        const edaVisualizationsDiv = document.getElementById("edaVisualizations");
+        const edaVisualizationsDiv =
+          document.getElementById("edaVisualizations");
         edaVisualizationsDiv.innerHTML = ""; // Clear previous visualizations
 
         if (data.success) {
@@ -92,12 +105,12 @@
               const card = document.createElement("div");
               card.className = "col s12 m6"; // Adjust columns based on desired layout
               card.innerHTML = `
-                <div class="card">
+                <div class="card rounded-corners">
                   <div class="card-image waves-effect waves-block waves-light">
                     <img class="activator" src="data:image/png;base64,${vis.image}" onclick="openFullScreen('${vis.image}')">
                   </div>
                   <div class="card-content">
-                    <span class="card-title activator grey-text text-darken-4">Click to expand<i class="material-icons right">more_vert</i></span>
+                    <span class="card-action activator grey-text text-darken-4">Click to expand<i class="material-icons right">more_vert</i></span>
                   </div>
                   <div class="card-reveal">
                     <span class="card-title grey-text text-darken-4">Full Image<i class="material-icons right">close</i></span>
@@ -109,9 +122,11 @@
             });
 
             // Show the generate PDF button
-            document.getElementById("generatePDFButton").style.display = "block";
+            document.getElementById("generatePDFButton").style.display =
+              "block";
           } else {
-            edaVisualizationsDiv.innerHTML = "<p>No visualizations available for this file.</p>";
+            edaVisualizationsDiv.innerHTML =
+              "<p>No visualizations available for this file.</p>";
             document.getElementById("generatePDFButton").style.display = "none";
           }
         } else {
@@ -121,7 +136,8 @@
       })
       .catch((error) => {
         console.error("Error fetching EDA visualizations:", error);
-        const edaVisualizationsDiv = document.getElementById("edaVisualizations");
+        const edaVisualizationsDiv =
+          document.getElementById("edaVisualizations");
         edaVisualizationsDiv.innerHTML = `<p>Error fetching EDA visualizations. Please try again.</p>`;
         document.getElementById("generatePDFButton").style.display = "none";
       })

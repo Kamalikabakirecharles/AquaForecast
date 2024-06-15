@@ -1,0 +1,176 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | Dashboard{% endblock %}
+{% block content %}
+{% load static %}
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>Dashboard</h4>
+      <p>Welcome to the Dashboard</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Card 1 -->
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+            Historical Analysis
+        </div>
+        <div class="card-content lighten-3">
+          <p>Explore and analyze Historical Analysis.</p>
+          <div id="historical-analysis-animation" style="width: 100%; height: 200px;"></div>
+        </div>
+        <div class="card-action center-align">
+          <a href="{% url 'upload_dataset' %}" class="btn waves-effect waves-light blue">Go to Historical Analysis</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+            Spatial Analysis
+        </div>
+        <div class="card-content lighten-3">
+          <p>Explore and analyze Spatial Analysis.</p>
+          <div id="spatial-analysis-animation" style="width: 100%; height: 200px;"></div>
+        </div>
+        <div class="card-action center-align">
+          <a href="{% url 'environmental_factors' %}" class="btn waves-effect waves-light blue">Go to Spatial Analysis</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add more cards as needed -->
+
+  </div>
+  <div class="row">
+    <!-- Card 1 -->
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+            Environmental Factors
+        </div>
+        <div class="card-content lighten-3">
+          <p>Explore and analyze Environmental Factors.</p>
+          <div id="environmental-factors-animation" style="width: 100%; height: 200px;"></div>
+        </div>
+        <div class="card-action center-align">
+          <a href="{% url 'upload_dataset' %}" class="btn waves-effect waves-light blue">Go to Environmental Factors</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+            Live Weather
+        </div>
+        <div class="card-content lighten-3">
+          <p>Explore Live Weather.</p>
+          <div id="live-weather-animation" style="width: 100%; height: 200px;"></div>
+        </div>
+        <div class="card-action center-align">
+          <a href="{% url 'environmental_factors' %}" class="btn waves-effect waves-light blue">Go to Live Weather</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add more cards as needed -->
+
+  </div>
+  <div class="row">
+    <!-- Card 1: Upload Dataset -->
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+          Upload Dataset
+        </div>
+        <div class="card-content lighten-3">
+          <p>Upload your dataset to perform analysis.</p>
+          <div id="upload-dataset-animation" style="width: 100%; height: 200px;"></div>
+        </div>
+        <div class="card-action center-align">
+          <a href="{% url 'upload_dataset' %}" class="btn waves-effect waves-light blue">Go to Upload Page</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Visualizations -->
+
+  </div>
+
+</div>
+
+<style>
+  .card-title {
+    background-color: #003E78; /* Set the background color for card titles */
+    color: white; /* Set the text color for card titles */
+    padding: 10px; /* Adjust padding as needed */
+    font-size: 1.5rem; /* Adjust font size as needed */
+    text-align: center; /* Center-align text */
+  }
+
+  .card-action {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px; /* Adjust margin as needed */
+  }
+  .rounded-corners {
+    border-radius: 8px; /* Adjust the border radius for the entire card */
+    overflow: hidden; /* Ensure content within rounded corners respects the border-radius */
+  }
+  .btn{
+    background: #003E78 ! important;
+  }
+</style>
+
+<script>
+  // Initialize Lottie animations
+  document.addEventListener('DOMContentLoaded', function() {
+    lottie.loadAnimation({
+      container: document.getElementById('historical-analysis-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/Animation - 1718449819893.json' %}" // Replace with your Lottie JSON URL
+    });
+
+    lottie.loadAnimation({
+      container: document.getElementById('spatial-analysis-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/Animation - 1718449157573.json' %}" // Replace with your Lottie JSON URL
+    });
+
+    lottie.loadAnimation({
+      container: document.getElementById('environmental-factors-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/Animation - 1718449553949.json' %}" // Replace with your Lottie JSON URL
+    });
+
+    lottie.loadAnimation({
+      container: document.getElementById('live-weather-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/Animation - 1718449765665.json' %}"
+    });
+
+    lottie.loadAnimation({
+      container: document.getElementById('upload-dataset-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/CKmtuoEiGU.json' %}" // Replace with your Lottie JSON URL
+    });
+  });
+</script>
+
+{% endblock %}

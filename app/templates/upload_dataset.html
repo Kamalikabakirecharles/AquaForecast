@@ -1,6 +1,10 @@
 {% extends "dashboard.html" %}
 {% block title %}AquaForecast | Upload Dataset{% endblock %}
+{% block breadcrumb %}
+<a class="breadcrumb">Upload Dataset</a>
+{% endblock %}
 {% block content %}
+{% load static %}
 <div class="container">
   <div class="row">
     <div class="col s12">
@@ -11,7 +15,7 @@
         <div class="file-drop-area blue-background" id="fileDropArea">
           <span class="choose-file-button white-text">Choose files</span>
           <span class="file-message white-text">or drag and drop files here</span>
-          <input class="file-input" type="file" name="file" id="fileInput" multiple>
+          <input class="file-input" type="file" name="file" id="fileInput" multiple required>
         </div>
         <button type="submit" class="btn waves-effect waves-light blue">Upload</button>
       </form>

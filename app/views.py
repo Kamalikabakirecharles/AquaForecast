@@ -40,20 +40,25 @@ def signup(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    return render(request, 'dashboard_design.html')
 
+@login_required
 def historical_analysis(request):
     return render(request, 'historical_analysis.html')
 
+@login_required
 def spatial_analysis(request):
     return render(request, 'spatial_analysis.html')
 
+@login_required
 def environmental_factors(request):
     return render(request, 'environmental_factors.html')
 
+@login_required
 def weather(request):
     return render(request, 'weather.html')
 
+@login_required
 def upload_dataset(request):
     return render(request, 'upload_dataset.html')
 
@@ -112,8 +117,9 @@ def get_weather_data(city):
 
 def weather(request):
     cities = [
-        "Kigali", "Butare", "Gisenyi", "Ruhengeri", "Rwamagana",
-        "Kibuye", "Byumba", "Cyangugu", "Nyanza", "Kibungo"
+        "Kigali", "Butare", "Gisenyi", "Rwamagana",
+        "Kibuye", "Byumba", "Cyangugu", "Ruhengeri",
+        "Nyanza", "Kibungo"
     ]
     
     weather_data_list = []
