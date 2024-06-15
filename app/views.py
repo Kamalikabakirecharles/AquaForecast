@@ -1,15 +1,32 @@
+import base64
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as auth_login
+import pandas as pd
 import requests
 from app.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.conf import settings
-from .models import WeatherData  
+from .models import WeatherData
 from django.views.decorators.csrf import csrf_exempt
+import seaborn as sns
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
+import matplotlib.pyplot as plt
+import os
+from django.core.files.storage import FileSystemStorage
+from io import BytesIO
+from .models import UploadedFile, EDAVisualization, Report
+import logging
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from PIL import Image
+
+
+
 
 # Create your views here.
 def index(request):
@@ -36,6 +53,9 @@ def environmental_factors(request):
 
 def weather(request):
     return render(request, 'weather.html')
+
+def upload_dataset(request):
+    return render(request, 'upload_dataset.html')
 
 
 def signup(request):
@@ -162,3 +182,201 @@ def save_weather_data(request):
             return JsonResponse({'success': False, 'message': str(e)})
     else:
         return HttpResponseBadRequest("Invalid request method")
+
+
+
+# Function to perform EDA and return base64 encoded images
+def perform_eda(df):
+    visualizations = []
+
+    # Example EDA: Count plot of weather types
+    plt.figure(figsize=(10, 6))
+    sns.countplot(x='weather', data=df)
+    plt.title('Distribution of Weather Types')
+    plt.xlabel('Weather')
+    plt.ylabel('Count')
+    
+    # Save plot to a BytesIO object and encode as base64
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    visualization_base64 = base64.b64encode(img.getvalue()).decode()
+    visualizations.append({'title': 'Distribution of Weather Types', 'image': visualization_base64})
+    plt.close()
+
+    # Box plots for numerical variables vs weather
+    plt.figure(figsize=(14, 8))
+
+    plt.subplot(2, 2, 1)
+    sns.boxplot(x='weather', y='precipitation', data=df)
+    plt.title('Precipitation vs Weather')
+
+    plt.subplot(2, 2, 2)
+    sns.boxplot(x='weather', y='temp_max', data=df)
+    plt.title('Max Temperature vs Weather')
+
+    plt.subplot(2, 2, 3)
+    sns.boxplot(x='weather', y='temp_min', data=df)
+    plt.title('Min Temperature vs Weather')
+
+    plt.subplot(2, 2, 4)
+    sns.boxplot(x='weather', y='wind', data=df)
+    plt.title('Wind vs Weather')
+
+    plt.tight_layout()
+
+    # Save the boxplot figure
+    img_boxplot = BytesIO()
+    plt.savefig(img_boxplot, format='png')
+    img_boxplot.seek(0)
+    visualization_boxplot_base64 = base64.b64encode(img_boxplot.getvalue()).decode()
+    visualizations.append({'title': 'Boxplots for Weather Variables', 'image': visualization_boxplot_base64})
+    plt.close()
+
+    # Pairplot to show relationships between numerical features
+    plt.figure(figsize=(12, 8))
+    sns.pairplot(df, hue='weather')
+    plt.title('Pairplot of Numerical Features with Weather')
+    
+    # Save the pairplot figure
+    img_pairplot = BytesIO()
+    plt.savefig(img_pairplot, format='png')
+    img_pairplot.seek(0)
+    visualization_pairplot_base64 = base64.b64encode(img_pairplot.getvalue()).decode()
+    visualizations.append({'title': 'Pairplot of Numerical Features', 'image': visualization_pairplot_base64})
+    plt.close()
+
+    return visualizations
+
+def generate_pdf_report(visualizations):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(100, 750, "Exploratory Data Analysis Report")
+    y_position = 700
+    for vis in visualizations:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(100, y_position, vis['title'])
+        y_position -= 20
+        try:
+            image_data = base64.b64decode(vis['image'])
+            img = Image.open(BytesIO(image_data))
+            aspect_ratio = img.width / float(img.height)
+            img_width = 400
+            img_height = img_width / aspect_ratio
+            img_path = BytesIO(image_data)
+            c.drawImage(img_path, 100, y_position - img_height, width=img_width, height=img_height)
+            y_position -= img_height + 20
+            if y_position < 100:
+                c.showPage()
+                y_position = 750
+        except Exception as e:
+            print(f"Error processing image: {str(e)}")
+            continue
+    c.save()
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+# View function to handle the environmental_factors page
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def upload_dataset(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
+
+        # Save the uploaded file to the database
+        uploaded_instance = UploadedFile(file=uploaded_file)
+        uploaded_instance.save()
+
+        try:
+            # Read the uploaded CSV file into a Pandas DataFrame
+            df = pd.read_csv(uploaded_file)
+
+            # Perform exploratory data analysis (EDA)
+            visualizations = perform_eda(df)
+
+            # Get all saved files from the database (updated list)
+            saved_files = UploadedFile.objects.all()
+
+            context = {
+                'saved_files': saved_files,
+                'visualizations': visualizations,
+            }
+
+            return render(request, 'environmental_factors.html', context)
+
+        except pd.errors.EmptyDataError:
+            return HttpResponseBadRequest("Uploaded file is empty or invalid")
+
+    elif request.method == 'POST':
+        return JsonResponse({'success': False, 'message': 'No file received in request'})
+
+    # Fetch all saved files for the initial rendering of the page
+    saved_files = UploadedFile.objects.all()
+
+    # Render the environmental_factors.html template for GET requests or if no file uploaded
+    context = {
+        'saved_files': saved_files,
+        'visualizations': None,  # or initialize as needed
+    }
+    return render(request, 'upload_dataset.html', context)
+
+@csrf_exempt
+def environmental_factors(request):
+    if request.method == 'POST':
+        file_id = request.POST.get('file_id')
+        try:
+            uploaded_file = UploadedFile.objects.get(id=file_id)
+            df = pd.read_csv(uploaded_file.file)
+
+            # Perform EDA and get visualizations
+            visualizations = perform_eda(df)
+
+            # Save individual visualizations to database (optional)
+            for vis in visualizations:
+                EDAVisualization.objects.create(
+                    uploaded_file=uploaded_file,
+                    visualization_base64=vis['image']
+                )
+
+            return JsonResponse({'success': True, 'visualizations': visualizations})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    # Fetch all saved files for the initial rendering of the page
+    saved_files = UploadedFile.objects.all()
+
+    context = {
+        'saved_files': saved_files,
+    }
+    return render(request, 'environmental_factors.html', context)
+
+
+@csrf_exempt
+def generate_pdf(request):
+    if request.method == 'POST':
+        file_id = request.POST.get('file_id')
+        try:
+            uploaded_file = UploadedFile.objects.get(id=file_id)
+            visualizations = EDAVisualization.objects.filter(uploaded_file=uploaded_file)
+
+            vis_data = [{'title': vis.title, 'image': vis.visualization_base64} for vis in visualizations]
+            pdf_bytes = generate_pdf_report(vis_data)
+
+            report = Report.objects.create(
+                uploaded_file=uploaded_file,
+                report_pdf=pdf_bytes
+            )
+            report.save()
+
+            return JsonResponse({'success': True, 'message': 'PDF report generated successfully'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return HttpResponseBadRequest("Invalid request method")
+

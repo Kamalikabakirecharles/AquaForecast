@@ -142,3 +142,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 OPENWEATHERMAP_API_KEY = '5c1299487a29c7318ae24c3175837630'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'Uploads')  # Specify the absolute path to your "Uploads" directory
+
+MEDIA_URL = '/uploads/'  # URL prefix for serving media files

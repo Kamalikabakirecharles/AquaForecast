@@ -39,3 +39,27 @@ class WeatherData(models.Model):
     humidity = models.FloatField()
     wind_speed = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+class UploadedFile(models.Model):
+    file = models.FileField(upload_to='uploads/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file.name
+    
+    
+class EDAVisualization(models.Model):
+    uploaded_file = models.ForeignKey(UploadedFile, on_delete=models.CASCADE)
+    visualization_base64 = models.TextField()  # Assuming you store base64 encoded images as text
+
+    def __str__(self):
+        return f"EDA Visualization for {self.uploaded_file.file.name}"
+    
+
+class Report(models.Model):
+    uploaded_file = models.ForeignKey(UploadedFile, on_delete=models.CASCADE)
+    report_pdf = models.FileField(upload_to='reports/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report for {self.uploaded_file.file.name}"

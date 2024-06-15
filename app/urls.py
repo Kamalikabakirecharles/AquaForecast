@@ -14,4 +14,5 @@ urlpatterns = [
     path('spatial_analysis/', views.spatial_analysis, name='spatial_analysis'),
     path('environmental_factors/', views.environmental_factors, name='environmental_factors'),
     path('save_weather_data/', views.save_weather_data, name='save_weather_data'),
+    path('upload_dataset/', views.upload_dataset, name='upload_dataset'),
 ]

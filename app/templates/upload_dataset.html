@@ -1,0 +1,156 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | Upload Dataset{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>Upload Dataset</h4>
+      <p>Upload your dataset to see the EDA visualizations:</p>
+      <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="file-drop-area blue-background" id="fileDropArea">
+          <span class="choose-file-button white-text">Choose files</span>
+          <span class="file-message white-text">or drag and drop files here</span>
+          <input class="file-input" type="file" name="file" id="fileInput" multiple>
+        </div>
+        <button type="submit" class="btn waves-effect waves-light blue">Upload</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Loader Overlay -->
+<div class="overlay" id="loaderOverlay">
+  <div class="loader"></div>
+</div>
+
+<style>
+  .file-drop-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    height: 200px;
+    border: 2px dashed #ccc;
+    border-radius: 6px;
+    margin: 20px auto;
+    transition: 0.2s;
+    flex-wrap: wrap;
+  }
+
+  .file-drop-area.drag-over {
+    border-color: #000;
+  }
+
+  .blue-background {
+    background-color: #003E78; /* Your desired blue background color */
+    color: white;
+    text-align: center;
+  }
+
+  .choose-file-button,
+  .file-message {
+    font-size: 16px;
+  }
+
+  .white-text {
+    color: white;
+  }
+
+  /* Loader Overlay */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    display: none; /* Initially hidden */
+  }
+
+  /* Loader */
+  .loader {
+    border: 16px solid #f3f3f3; /* Light grey */
+    border-top: 16px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+
+<script>
+  const fileDropArea = document.getElementById('fileDropArea');
+  const fileInput = document.getElementById('fileInput');
+  const loaderOverlay = document.getElementById('loaderOverlay');
+
+  // Highlight drop area when file is dragged over
+  fileDropArea.addEventListener('dragover', function (event) {
+    event.preventDefault();
+    fileDropArea.classList.add('drag-over');
+  });
+
+  // Remove highlight when file is dragged out
+  fileDropArea.addEventListener('dragleave', function (event) {
+    fileDropArea.classList.remove('drag-over');
+  });
+
+  // Handle file drop
+  fileDropArea.addEventListener('drop', function (event) {
+    event.preventDefault();
+    fileDropArea.classList.remove('drag-over');
+
+    const files = event.dataTransfer.files;
+    fileInput.files = files;
+    updateFileName(files[0].name);
+  });
+
+  // Update file name display
+  function updateFileName(fileName) {
+    const fileLabel = document.querySelector('.choose-file-button');
+    fileLabel.textContent = fileName;
+  }
+
+  // Handle form submission
+  document.getElementById('uploadForm').addEventListener('submit', function (event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Show loader
+    loaderOverlay.style.display = 'flex';
+
+    const formData = new FormData(this); // Create FormData object
+
+    // Perform AJAX request to handle file upload
+    fetch('{% url 'upload_dataset' %}', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Upload response:', data);
+        // Handle response data as needed
+
+        // Hide loader after processing
+        loaderOverlay.style.display = 'none';
+      })
+      .catch(error => {
+        console.error('Error uploading file:', error);
+
+        // Hide loader on error
+        loaderOverlay.style.display = 'none';
+      });
+  });
+</script>
+
+{% endblock %}

@@ -5,8 +5,181 @@
   <div class="row">
     <div class="col s12">
       <h4>Environmental Factors</h4>
-      <p>Content for Environmental Factors</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12 m6">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Select Saved File</span>
+          <select id="savedFilesDropdown" class="browser-default">
+            <option value="" disabled selected>Select a file</option>
+            {% for file in saved_files %}
+            <option value="{{ file.id }}">{{ file.file.name }}</option>
+            {% endfor %}
+          </select>
+          <button id="fetchEDAButton" class="btn blue" onclick="fetchEDA()">
+            Fetch EDA Visualizations
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12">
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">EDA Visualizations</span>
+          <div id="edaVisualizations" class="row">
+            <!-- Visualizations fetched via AJAX will be displayed here -->
+          </div>
+          <div id="generatePDFButton" style="display: none;">
+            <button class="btn blue" onclick="generatePDF()">Generate PDF Report</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Loader Overlay -->
+<div class="overlay" id="loaderOverlay">
+  <div class="loader"></div>
+</div>
+
+<!-- Modal Structure for Full-Screen Image -->
+<div id="fullScreenModal" class="modal">
+  <div class="modal-content center-align">
+    <img
+      id="fullScreenImage"
+      src=""
+      alt="Full-Screen EDA Visualization"
+      style="max-width: 100%; max-height: 80vh"
+    />
+  </div>
+  <div class="modal-footer">
+    <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+  </div>
+</div>
+
+<script>
+  function fetchEDA() {
+    const overlay = document.getElementById("loaderOverlay");
+    overlay.style.display = "flex"; // Show loader
+
+    const fileSelect = document.getElementById("savedFilesDropdown");
+    const fileId = fileSelect.value;
+
+    // Perform AJAX request to fetch EDA visualizations
+    fetch("/app/environmental_factors/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: `file_id=${fileId}`,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetch EDA response:", data);
+        const edaVisualizationsDiv = document.getElementById("edaVisualizations");
+        edaVisualizationsDiv.innerHTML = ""; // Clear previous visualizations
+
+        if (data.success) {
+          if (data.visualizations.length > 0) {
+            data.visualizations.forEach((vis) => {
+              // Create a new card for each visualization
+              const card = document.createElement("div");
+              card.className = "col s12 m6"; // Adjust columns based on desired layout
+              card.innerHTML = `
+                <div class="card">
+                  <div class="card-image waves-effect waves-block waves-light">
+                    <img class="activator" src="data:image/png;base64,${vis.image}" onclick="openFullScreen('${vis.image}')">
+                  </div>
+                  <div class="card-content">
+                    <span class="card-title activator grey-text text-darken-4">Click to expand<i class="material-icons right">more_vert</i></span>
+                  </div>
+                  <div class="card-reveal">
+                    <span class="card-title grey-text text-darken-4">Full Image<i class="material-icons right">close</i></span>
+                    <img src="data:image/png;base64,${vis.image}" alt="EDA Visualization">
+                  </div>
+                </div>
+              `;
+              edaVisualizationsDiv.appendChild(card);
+            });
+
+            // Show the generate PDF button
+            document.getElementById("generatePDFButton").style.display = "block";
+          } else {
+            edaVisualizationsDiv.innerHTML = "<p>No visualizations available for this file.</p>";
+            document.getElementById("generatePDFButton").style.display = "none";
+          }
+        } else {
+          edaVisualizationsDiv.innerHTML = `<p>Error: ${data.message}</p>`;
+          document.getElementById("generatePDFButton").style.display = "none";
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching EDA visualizations:", error);
+        const edaVisualizationsDiv = document.getElementById("edaVisualizations");
+        edaVisualizationsDiv.innerHTML = `<p>Error fetching EDA visualizations. Please try again.</p>`;
+        document.getElementById("generatePDFButton").style.display = "none";
+      })
+      .finally(() => {
+        overlay.style.display = "none"; // Hide loader
+      });
+  }
+
+  // Function to open full-screen modal with the clicked image
+  function openFullScreen(base64Image) {
+    const fullScreenImage = document.getElementById("fullScreenImage");
+    fullScreenImage.src = `data:image/png;base64,${base64Image}`;
+    const fullScreenModal = document.getElementById("fullScreenModal");
+    const instance = M.Modal.init(fullScreenModal, {
+      dismissible: true, // Modal can be dismissed by clicking outside of the modal
+      opacity: 0.8, // Opacity of modal background
+      inDuration: 250, // Transition in duration
+      outDuration: 250, // Transition out duration
+    });
+    instance.open();
+  }
+
+  function generatePDF() {
+    const overlay = document.getElementById("loaderOverlay");
+    overlay.style.display = "flex"; // Show loader
+
+    const fileSelect = document.getElementById("savedFilesDropdown");
+    const fileId = fileSelect.value;
+
+    // Perform AJAX request to generate PDF
+    fetch("/app/generate_pdf/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: `file_id=${fileId}`,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Generate PDF response:", data);
+
+        if (data.success) {
+          M.toast({ html: data.message, classes: "green" });
+        } else {
+          M.toast({ html: data.message, classes: "red" });
+        }
+      })
+      .catch((error) => {
+        console.error("Error generating PDF:", error);
+        M.toast({
+          html: "Error generating PDF. Please try again.",
+          classes: "red",
+        });
+      })
+      .finally(() => {
+        overlay.style.display = "none"; // Hide loader
+      });
+  }
+</script>
 {% endblock %}
