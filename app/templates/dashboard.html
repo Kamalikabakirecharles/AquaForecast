@@ -6,6 +6,14 @@
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
     />
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
+    ></script>
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -160,13 +168,15 @@
         <div class="custom-indigo white-text" style="height: 180px">
           <div class="row">
             <img
-              style="margin-top: 5%"
-              width="80"
-              height="80"
-              src="https://res.cloudinary.com/dacg0wegv/image/upload/t_media_lib_thumb/v1463990208/photo_dkkrxc.png"
+              style="margin-bottom: -30px"
+              width="150"
+              height="150"
+              margin
+              src="{% static '/images/User.png' %}"
               class="circle responsive-img"
             />
-            <p style="margin-top: -5%">{{ user.email }}</p>
+            <p style="margin-top: -10%">Welcome</p>
+            <p style="margin-top: -11%">{{ user.email }}</p>
           </div>
         </div>
       </li>
@@ -229,9 +239,7 @@
         <div class="nav-wrapper custom-indigo darken-2">
           <a class="breadcrumb">Admin</a>
           <a class="breadcrumb" href="{% url 'dashboard' %}">Dashboard</a>
-          {% block breadcrumb %}
-          
-          {% endblock %}
+          {% block breadcrumb %} {% endblock %}
         </div>
       </nav>
     </header>

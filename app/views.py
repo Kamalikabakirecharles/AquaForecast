@@ -1,4 +1,5 @@
 import base64
+from collections import defaultdict
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -24,6 +25,7 @@ import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image
+from django.shortcuts import get_object_or_404
 
 
 
@@ -386,3 +388,23 @@ def generate_pdf(request):
 
     return HttpResponseBadRequest("Invalid request method")
 
+@login_required
+def historical_analysis(request):
+    # Fetch all saved EDA visualizations
+    eda_visualizations = EDAVisualization.objects.all()
+    context = {
+        'eda_visualizations': eda_visualizations,
+    }
+    return render(request, 'historical_analysis.html', context)
+
+
+def download_image(request, eda_visualizations_id):
+    eda_visualizations = get_object_or_404(EDAVisualization, id=eda_visualizations_id)
+    
+    # Decode the base64 image
+    image_data = base64.b64decode(eda_visualizations.visualization_base64)
+    
+    # Serve the image directly as a response
+    response = HttpResponse(image_data, content_type='image/png')
+    response['Content-Disposition'] = f'attachment; filename={eda_visualizations.uploaded_file.file.name}.png'
+    return response
