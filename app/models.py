@@ -55,11 +55,3 @@ class EDAVisualization(models.Model):
     def __str__(self):
         return f"EDA Visualization for {self.uploaded_file.file.name}"
     
-
-class Report(models.Model):
-    uploaded_file = models.ForeignKey(UploadedFile, on_delete=models.CASCADE)
-    report_pdf = models.FileField(upload_to='reports/')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Report for {self.uploaded_file.file.name}"

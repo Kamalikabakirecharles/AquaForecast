@@ -1,5 +1,6 @@
 import base64
 from collections import defaultdict
+import json
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -20,9 +21,10 @@ import matplotlib.pyplot as plt
 import os
 from django.core.files.storage import FileSystemStorage
 from io import BytesIO
-from .models import UploadedFile, EDAVisualization, Report
+from .models import UploadedFile, EDAVisualization
 import logging
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from PIL import Image
 from django.shortcuts import get_object_or_404
@@ -63,6 +65,10 @@ def weather(request):
 @login_required
 def upload_dataset(request):
     return render(request, 'upload_dataset.html')
+
+@login_required
+def visualization(request):
+    return render(request, 'visualization.html')
 
 
 def signup(request):
@@ -256,39 +262,8 @@ def perform_eda(df):
 
     return visualizations
 
-def generate_pdf_report(visualizations):
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(100, 750, "Exploratory Data Analysis Report")
-    y_position = 700
-    for vis in visualizations:
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y_position, vis['title'])
-        y_position -= 20
-        try:
-            image_data = base64.b64decode(vis['image'])
-            img = Image.open(BytesIO(image_data))
-            aspect_ratio = img.width / float(img.height)
-            img_width = 400
-            img_height = img_width / aspect_ratio
-            img_path = BytesIO(image_data)
-            c.drawImage(img_path, 100, y_position - img_height, width=img_width, height=img_height)
-            y_position -= img_height + 20
-            if y_position < 100:
-                c.showPage()
-                y_position = 750
-        except Exception as e:
-            print(f"Error processing image: {str(e)}")
-            continue
-    c.save()
-    pdf_bytes = buffer.getvalue()
-    buffer.close()
-    return pdf_bytes
 
 
-# View function to handle the environmental_factors page
-logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def upload_dataset(request):
@@ -364,29 +339,6 @@ def environmental_factors(request):
     return render(request, 'environmental_factors.html', context)
 
 
-@csrf_exempt
-def generate_pdf(request):
-    if request.method == 'POST':
-        file_id = request.POST.get('file_id')
-        try:
-            uploaded_file = UploadedFile.objects.get(id=file_id)
-            visualizations = EDAVisualization.objects.filter(uploaded_file=uploaded_file)
-
-            vis_data = [{'title': vis.title, 'image': vis.visualization_base64} for vis in visualizations]
-            pdf_bytes = generate_pdf_report(vis_data)
-
-            report = Report.objects.create(
-                uploaded_file=uploaded_file,
-                report_pdf=pdf_bytes
-            )
-            report.save()
-
-            return JsonResponse({'success': True, 'message': 'PDF report generated successfully'})
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-
-    return HttpResponseBadRequest("Invalid request method")
 
 @login_required
 def historical_analysis(request):
@@ -408,3 +360,116 @@ def download_image(request, eda_visualizations_id):
     response = HttpResponse(image_data, content_type='image/png')
     response['Content-Disposition'] = f'attachment; filename={eda_visualizations.uploaded_file.file.name}.png'
     return response
+
+@login_required
+def generate_pdf(request):
+    if request.method == 'POST':
+        file_id = request.POST.get('file_id')
+        try:
+            uploaded_file = UploadedFile.objects.get(id=file_id)
+            eda_visualizations = EDAVisualization.objects.filter(uploaded_file=uploaded_file)[:3]  # Limit to 3 images
+
+            # Create a BytesIO buffer to store PDF
+            buffer = BytesIO()
+
+            # Create PDF document
+            c = canvas.Canvas(buffer, pagesize=letter)
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(1 * inch, 10.5 * inch, "Environmental Data Analysis Report")
+            c.setFont("Helvetica", 12)
+
+            y_position = 10 * inch  # Start position for content
+
+            first_image = True  # Flag to adjust first image positioning
+
+            for i, vis in enumerate(eda_visualizations):
+                # Decode base64 image
+                image_data = base64.b64decode(vis.visualization_base64)
+                image_stream = BytesIO(image_data)
+                image = Image.open(image_stream)
+
+                # Calculate image dimensions for scaling
+                image_width, image_height = image.size
+                aspect_ratio = image_width / float(image_height)
+                desired_width = 5.5 * inch  # Adjust based on your layout preference
+                image_height = desired_width / aspect_ratio
+
+                # Check if there's enough space for the next image; otherwise, create a new page
+                if not first_image and y_position - image_height < 1 * inch:
+                    c.showPage()
+                    c.setFont("Helvetica-Bold", 16)
+                    c.drawString(1 * inch, 10.5 * inch, "Environmental Data Analysis Report")
+                    c.setFont("Helvetica", 12)
+                    y_position = 10 * inch  # Reset y_position for new page
+
+                # Adjust y_position for first image to avoid cut-off
+                if not first_image:
+                    y_position -= 1.5 * inch  # Add space between images
+                else:
+                    first_image = False
+
+                # Add image to PDF
+                c.drawString(1 * inch, y_position - 0.2 * inch, f"EDA Visualization: {uploaded_file.file.name}")
+                c.drawInlineImage(image, 1 * inch, y_position - 1 * inch - image_height, width=desired_width, height=image_height)
+
+                # Update y_position for the next image
+                y_position -= image_height
+
+            c.save()
+
+            buffer.seek(0)
+
+            # Prepare response to download PDF
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="EDA_Report.pdf"'
+            response.write(buffer.getvalue())
+
+            return response
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return HttpResponseBadRequest("Invalid request method")
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def visualization_page(request):
+    city_name = request.GET.get('city')
+
+    # Fetch weather data for the specified city
+    logger.info(f"Fetching weather data for city: {city_name}")
+    weather_data = WeatherData.objects.filter(city=city_name).order_by('timestamp')
+
+    if not weather_data.exists():
+        logger.warning("No weather data found")
+        return render(request, 'visualization.html', {'city_name': city_name, 'error': "No weather data found for the specified city."})
+
+    logger.info("Weather data retrieved successfully")
+    data = pd.DataFrame(list(weather_data.values()))
+    logger.debug(f"Data fetched: {data.head()}")
+
+    visualizations = generate_visualizations(data)
+    logger.debug(f"Generated visualizations: {visualizations}")
+
+    return render(request, 'visualization.html', {
+        'city_name': city_name,
+        'visualizations': json.dumps(visualizations)  # Serialize the visualizations to JSON
+    })
+
+def generate_visualizations(data):
+    visualizations = {
+        'temperature': {
+            'timestamps': data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'values': data['temperature'].tolist()
+        },
+        'humidity': {
+            'timestamps': data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'values': data['humidity'].tolist()
+        },
+        'wind_speed': {
+            'timestamps': data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'values': data['wind_speed'].tolist()
+        }
+    }
+    return visualizations

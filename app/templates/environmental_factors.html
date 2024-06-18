@@ -75,6 +75,7 @@ Factors {% endblock %} {% block breadcrumb %}
 </div>
 
 <script>
+  $(".dropdown-trigger").dropdown();
   function fetchEDA() {
     const overlay = document.getElementById("loaderOverlay");
     overlay.style.display = "flex"; // Show loader
@@ -163,10 +164,10 @@ Factors {% endblock %} {% block breadcrumb %}
   function generatePDF() {
     const overlay = document.getElementById("loaderOverlay");
     overlay.style.display = "flex"; // Show loader
-
+  
     const fileSelect = document.getElementById("savedFilesDropdown");
     const fileId = fileSelect.value;
-
+  
     // Perform AJAX request to generate PDF
     fetch("/app/generate_pdf/", {
       method: "POST",
@@ -176,15 +177,23 @@ Factors {% endblock %} {% block breadcrumb %}
       },
       body: `file_id=${fileId}`,
     })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Generate PDF response:", data);
-
-        if (data.success) {
-          M.toast({ html: data.message, classes: "green" });
+      .then((response) => {
+        if (response.ok) {
+          return response.blob();
         } else {
-          M.toast({ html: data.message, classes: "red" });
+          throw new Error("Failed to generate PDF");
         }
+      })
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "EDA_Report.pdf";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        M.toast({ html: "PDF generated successfully", classes: "green" });
       })
       .catch((error) => {
         console.error("Error generating PDF:", error);
@@ -196,6 +205,6 @@ Factors {% endblock %} {% block breadcrumb %}
       .finally(() => {
         overlay.style.display = "none"; // Hide loader
       });
-  }
+  }  
 </script>
 {% endblock %}

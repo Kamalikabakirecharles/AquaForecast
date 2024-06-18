@@ -1,0 +1,308 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | Visualization{% endblock %}
+{% block breadcrumb %}
+<a class="breadcrumb" href="{% url 'weather' %}">Live Weather</a>
+<a class="breadcrumb">Visualize Weather Data</a>
+{% endblock %}
+{% block content %}
+{% load static %}
+<style>
+    .btn{
+        background: #003E78 ! important;
+      }
+</style>
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>Weather Data Visualization for {{ city_name }}</h4>
+      <div id="visualizations">
+        {% if error %}
+          <p>{{ error }}</p>
+        {% else %}
+          <div class="card rounded-corners">
+            <div class="card-title">
+                Temperature
+            </div>
+            <div class="card-content lighten-3">
+                <img src="{% static 'images/weather/Temperature.png' %}" style="max-width: 15%; margin-top: -30px;">
+              <canvas id="temperatureChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          <div class="card rounded-corners">
+            <div class="card-title">
+                Humidity
+            </div>
+            <div class="card-content lighten-3">
+                <img src="{% static 'images/weather/Humidity.png' %}" style="max-width: 15%; margin-top: -30px;">
+              <canvas id="humidityChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          <div class="card rounded-corners">
+            <div class="card-title">
+                Wind Speed
+            </div>
+            <div class="card-content lighten-3">
+                <img src="{% static 'images/weather/wind.png' %}" style="max-width: 15%; margin-top: -30px;">
+              <canvas id="windSpeedChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          <div class="card rounded-corners" id="combinedChartCard" style="display:none;">
+            <div class="card-title">
+                Combined Weather Data
+            </div>
+            <div class="card-content lighten-3">
+              <canvas id="combinedChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          <div class="card rounded-corners">
+            <div class="card-title blue-background white-text">
+              Combine Weather Data Charts
+            </div>
+            <div class="card-content lighten-3">
+              <p>
+                If you need to visualize the combined data from the individual charts for Temperature, Humidity, and Wind Speed, you can toggle to view the combined chart below.
+              </p>
+            </div>
+            <div class="card-action">
+              <button id="toggleButton" class="btn waves-effect waves-light blue">Show Combined Chart</button>
+            </div>
+            <!-- Combined chart canvas -->
+            <div id="combinedChartContainer" class="card-content lighten-3" style="display: none;">
+              <canvas id="combinedChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const visualizations = JSON.parse('{{ visualizations|escapejs }}');
+        
+        if (visualizations) {
+            generateVisualizations(visualizations);
+        }
+
+        const toggleButton = document.getElementById('toggleButton');
+        const combinedChartCard = document.getElementById('combinedChartCard');
+        const temperatureChart = document.getElementById('temperatureChart').parentElement.parentElement;
+        const humidityChart = document.getElementById('humidityChart').parentElement.parentElement;
+        const windSpeedChart = document.getElementById('windSpeedChart').parentElement.parentElement;
+
+        toggleButton.addEventListener('click', function() {
+            const isCombinedVisible = combinedChartCard.style.display === 'block';
+
+            if (isCombinedVisible) {
+                combinedChartCard.style.display = 'none';
+                temperatureChart.style.display = 'block';
+                humidityChart.style.display = 'block';
+                windSpeedChart.style.display = 'block';
+                toggleButton.textContent = 'Show Combined Chart';
+            } else {
+                combinedChartCard.style.display = 'block';
+                temperatureChart.style.display = 'none';
+                humidityChart.style.display = 'none';
+                windSpeedChart.style.display = 'none';
+                toggleButton.textContent = 'Show Individual Charts';
+            }
+        });
+    });
+
+    function generateVisualizations(data) {
+      const ctxTemperature = document.getElementById('temperatureChart').getContext('2d');
+      new Chart(ctxTemperature, {
+        type: 'line',
+        data: {
+          labels: data.temperature.timestamps,
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: data.temperature.values,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Temperature (°C)'
+              }
+            }
+          }
+        }
+      });
+
+      const ctxHumidity = document.getElementById('humidityChart').getContext('2d');
+      new Chart(ctxHumidity, {
+        type: 'line',
+        data: {
+          labels: data.humidity.timestamps,
+          datasets: [{
+            label: 'Humidity (%)',
+            data: data.humidity.values,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Humidity (%)'
+              }
+            }
+          }
+        }
+      });
+
+      const ctxWindSpeed = document.getElementById('windSpeedChart').getContext('2d');
+      new Chart(ctxWindSpeed, {
+        type: 'line',
+        data: {
+          labels: data.wind_speed.timestamps,
+          datasets: [{
+            label: 'Wind Speed (m/s)',
+            data: data.wind_speed.values,
+            borderColor: 'rgba(255, 206, 86, 1)',
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Wind Speed (m/s)'
+              }
+            }
+          }
+        }
+      });
+
+      const ctxCombined = document.getElementById('combinedChart').getContext('2d');
+      new Chart(ctxCombined, {
+        type: 'line',
+        data: {
+          labels: data.temperature.timestamps,
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: data.temperature.values,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+            yAxisID: 'y-temperature'
+          }, {
+            label: 'Humidity (%)',
+            data: data.humidity.values,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            fill: true,
+            yAxisID: 'y-humidity'
+          }, {
+            label: 'Wind Speed (m/s)',
+            data: data.wind_speed.values,
+            borderColor: 'rgba(255, 206, 86, 1)',
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            fill: true,
+            yAxisID: 'y-windSpeed'
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            },
+            'y-temperature': {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Temperature (°C)'
+              }
+            },
+            'y-humidity': {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Humidity (%)'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            },
+            'y-windSpeed': {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Wind Speed (m/s)'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
+        }
+      });
+    }
+</script>
+{% endblock %}

@@ -16,4 +16,6 @@ urlpatterns = [
     path('save_weather_data/', views.save_weather_data, name='save_weather_data'),
     path('upload_dataset/', views.upload_dataset, name='upload_dataset'),
     path('download_image/<int:eda_visualizations_id>/', views.download_image, name='download_image'),
+    path('generate_pdf/', views.generate_pdf, name='generate_pdf'),
+    path('visualization/', views.visualization_page, name='visualization_page'),
 ]

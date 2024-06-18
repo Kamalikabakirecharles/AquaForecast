@@ -19,7 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script
       src="{% static 'bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}"
-      integrity="sha384-mCsbSKBdIJqE70OWWlhXqoDz/YCKaBSqBE/oxFn3XwJduJ++KG/Rnp73RsmIdFJL"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
     <link
@@ -27,6 +27,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.8/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>{% block title %}AquaForecast{% endblock %}</title>
     <link
       rel="icon"
@@ -224,14 +225,7 @@
           >
           <ul class="right">
             <!-- Dropdown Trigger -->
-            <li>
-              <a
-                class="dropdown-trigger"
-                href="#!"
-                data-target="account-dropdown"
-                ><i class="material-icons">account_circle</i></a
-              >
-            </li>
+            <li><a class="dropdown-trigger" href="#!" data-target="account-dropdown"><i class="material-icons">account_circle</i></a></li>
           </ul>
         </div>
       </nav>
@@ -245,22 +239,20 @@
     </header>
 
     <!-- Dropdown Structure -->
-    <ul id="account-dropdown" class="dropdown-content">
-      <li><a>{{ user.email }}</a></li>
-      <li><a>{{ user.phone_number }}</a></li>
-      <!-- Assuming phone number is available in user profile -->
-      <li>
-        <a>
-          Account Status: {% if user.is_active %}
-          <span class="badge badge-success">Active</span>
-          {% else %}
-          <span class="badge badge-danger">Not Active</span>
-          {% endif %}
-        </a>
-      </li>
-      <li class="divider"></li>
-      <li><a href="{% url 'logout' %}">Logout</a></li>
-    </ul>
+  <ul id="account-dropdown" class="dropdown-content">
+    <li><a>{{ user.email }}</a></li>
+    <li><a>{{ user.phone_number }}</a></li> <!-- Assuming phone number is available in user profile -->
+    <li><a>
+      Account Status:
+      {% if user.is_active %}
+        <span class="badge badge-success">Active</span>
+      {% else %}
+        <span class="badge badge-danger">Not Active</span>
+      {% endif %}
+    </a></li>
+    <li class="divider"></li>
+    <li><a href="{% url 'logout' %}">Logout</a></li>
+  </ul>
 
     <main>
       {% block content %}
@@ -279,7 +271,7 @@
         $(".sidenav").sidenav();
         $(".collapsible").collapsible();
         $("select").formSelect();
-        $(".dropdown-trigger").dropdown(); // Initialize dropdown
+        $(".dropdown-trigger").dropdown();
       });
     </script>
   </body>

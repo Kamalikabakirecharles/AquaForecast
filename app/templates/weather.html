@@ -9,37 +9,55 @@
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-<script src="{% static '/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js' %}" integrity="sha384-mCsbSKBdIJqE70OWWlhXqoDz/YCKaBSqBE/oxFn3XwJduJ++KG/Rnp73RsmIdFJL" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 <style>
-  /* Loader Overlay */
   .overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    z-index: 1000;
-    display: flex;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */
+    display: none; /* Initially hidden */
     justify-content: center;
     align-items: center;
-  }
-
-  /* Loader */
-  .loader {
-    border: 16px solid #f3f3f3; /* Light grey */
-    border-top: 16px solid #3498db; /* Blue */
+    z-index: 9999; /* Ensure it's on top of other content */
+}
+.loader {
+    width: 150px;
+    height: 150px;
+    background-color: #003e78; /* Use the specified color */
     border-radius: 50%;
-    width: 120px;
-    height: 120px;
-    animation: spin 2s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+    position: relative;
+    box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+      0 5px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+.loader:before,
+.loader:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 45%;
+    top: -40%;
+    background-color: #fff;
+    animation: wave 5s linear infinite;
+}
+.loader:before {
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    animation: wave 5s linear infinite;
+}
+@keyframes wave {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
 
   #saveButton {
     background-color: #2196F3; /* Blue color */
@@ -180,12 +198,14 @@
             </div>
           </div>
           <div class="card-action">
-            <a href="#" class="btn waves-effect waves-light blue">More Details</a>
+            <a href="{% url 'visualization_page' %}?city={{ weather_data.city }}" class="btn waves-effect waves-light blue">More Details</a>
           </div>
         </div>
       </div>
     {% endfor %}
   </div>
+  
+
   <div class="row">
     <div class="col s12">
       <div class="center-align">
@@ -228,6 +248,7 @@
 </div>
 
 <script>
+  $(".dropdown-trigger").dropdown();
   let countdownTimer; // Variable to hold the countdown timer
 
   // Function to start the countdown timer
