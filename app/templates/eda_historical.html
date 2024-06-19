@@ -1,0 +1,182 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | EDA Historical{% endblock %}
+{% block breadcrumb %}
+<a class="breadcrumb" href="{% url 'environmental_factors' %}">Environmental Factors</a>
+<a class="breadcrumb">EDA Historical</a>
+{% endblock %}
+{% block content %}
+<style>
+    .btn {
+      background: #003E78 !important;
+    }
+    .card-title {
+      background-color: #003E78; /* Set the background color for card titles */
+      color: white; /* Set the text color for card titles */
+      padding: 10px; /* Adjust padding as needed */
+      font-size: 1.5rem; /* Adjust font size as needed */
+      text-align: center; /* Center-align text */
+    }
+    .card-content {
+      text-align: center; /* Center the text and image within the card */
+    }
+    .card:hover {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increase shadow on hover */
+    }
+    .rounded-corners {
+      border-radius: 8px; /* Adjust the border radius for the entire card */
+      overflow: hidden; /* Ensure content within rounded corners respects the border-radius */
+    }
+    .group-card {
+      margin-bottom: 20px; /* Adjust spacing between group cards */
+    }
+    .image-card {
+      margin-bottom: 10px; /* Adjust spacing between image cards */
+    }
+    .small_txt {
+      font-size: 15px !important;
+    }
+    .medi_txt {
+      font-size: 20px !important;
+    }
+    .scrollable-content {
+      max-height: 450px; /* Set your desired max height */
+      overflow-y: auto; /* Enable vertical scrolling */
+    }
+  </style>
+  <div class="container">
+    <div class="row">
+      <div class="col s12">
+        <h4>EDA Historical</h4>
+        <p>Content for EDA Historical</p>
+      </div>
+    </div>
+  
+    <!-- Grouped Cards for DataSets -->
+    <div class="row">
+      <div class="col s12 m6">
+        <div class="card rounded-corners">
+          <div class="card-title blue-background white-text">
+            DataSets
+          </div>
+          <div class="card-content lighten-3 scrollable-content">
+            {% regroup eda_visualizations by uploaded_file.file.name as grouped_visualizations %}
+            {% for group in grouped_visualizations %}
+            <div class="group-card">
+              <div class="card rounded-corners">
+                <div class="card-title blue-background white-text medi_txt">
+                  {{ group.grouper }} 
+                </div>
+                <div class="card-content lighten-3">
+                  <ion-icon name="images-outline"></ion-icon> {{ group.list|length }} Images in this DataSet.
+                </div>
+                <div class="card-action lighten-3">
+                  <a href="#" class="btn waves-effect waves-light blue view-group-btn" data-group="{{ group.grouper }}">View Images</a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <div class="col s12 m6">
+        <!-- Image Cards for EDA Visualizations -->
+        {% for group in grouped_visualizations %}
+        <div class="visualization-group" id="group-{{ group.grouper }}" style="display: none;">
+          <div class="card rounded-corners">
+            <div class="card-title blue-background white-text small_txt">
+              EDA Visualizations: {{ group.grouper }}
+            </div>
+            <div class="card-content lighten-3 scrollable-content">
+              <div class="row">
+                {% for visualization in group.list %}
+                <div class="image-card col s12 m6 l0">
+                  <div class="card rounded-corners">
+                    <div class="card-title blue-background white-text small_txt">
+                      {{ visualization.uploaded_file.file.name }}
+                    </div>
+                    <div class="card-content lighten-3">
+                      <img src="data:image/png;base64,{{ visualization.visualization_base64 }}" alt="EDA Visualizations" style="max-width: 100%;">
+                    </div>
+                    <div class="card-action lighten-3">
+                      <a href="{% url 'download_image' visualization.id %}" class="btn waves-effect waves-light blue download-btn"><ion-icon name="cloud-download-outline"></ion-icon></a>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  
+    <!-- Show All Button -->
+    <div class="row">
+      <div class="col s12">
+        <div class="card rounded-corners">
+          <div class="card-title blue-background white-text small_txt">
+            View all the images from all the DataSets
+          </div>
+          <div class="card-content">
+            <a href="#" class="btn waves-effect waves-light blue" id="show-all-btn" data-state="show">Show All</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    $(".dropdown-trigger").dropdown();
+    document.addEventListener('DOMContentLoaded', function() {
+      const viewGroupButtons = document.querySelectorAll('.view-group-btn');
+      const showAllButton = document.getElementById('show-all-btn');
+      const downloadButtons = document.querySelectorAll('.download-btn');
+  
+      viewGroupButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+          event.preventDefault();
+          const groupName = this.getAttribute('data-group');
+          const groupElement = document.getElementById(`group-${groupName}`);
+  
+          // Toggle visibility of the group
+          if (groupElement.style.display === 'block') {
+            groupElement.style.display = 'none';
+          } else {
+            groupElement.style.display = 'block';
+          }
+        });
+      });
+  
+      // Show all groups when "Show All" button is clicked
+      showAllButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        const visualizationGroups = document.querySelectorAll('.visualization-group');
+        const currentState = showAllButton.getAttribute('data-state');
+  
+        if (currentState === 'show') {
+          visualizationGroups.forEach(group => {
+            group.style.display = 'block';
+          });
+          showAllButton.textContent = 'Hide All';
+          showAllButton.setAttribute('data-state', 'hide');
+        } else {
+          visualizationGroups.forEach(group => {
+            group.style.display = 'none';
+          });
+          showAllButton.textContent = 'Show All';
+          showAllButton.setAttribute('data-state', 'show');
+        }
+      });
+  
+      // Show a toast message when the download button is clicked
+      downloadButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+          M.toast({html: 'Download started successfully!', classes: 'rounded'});
+        });
+      });
+    });
+  </script>
+  {% endblock %}
+  

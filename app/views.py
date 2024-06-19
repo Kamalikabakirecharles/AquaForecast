@@ -341,13 +341,13 @@ def environmental_factors(request):
 
 
 @login_required
-def historical_analysis(request):
+def eda_historical(request):
     # Fetch all saved EDA visualizations
     eda_visualizations = EDAVisualization.objects.all()
     context = {
         'eda_visualizations': eda_visualizations,
     }
-    return render(request, 'historical_analysis.html', context)
+    return render(request, 'eda_historical.html', context)
 
 
 def download_image(request, eda_visualizations_id):

@@ -1,7 +1,12 @@
 {% extends "dashboard.html" %} {% block title %}AquaForecast | Environmental
 Factors {% endblock %} {% block breadcrumb %}
 <a class="breadcrumb">Environmental Factors</a>
-{% endblock %} {% block content %}
+{% endblock %} {% block content %}{% load static %}
+<style>
+  .btn{
+    background: #003E78 ! important;
+  }
+</style>
 <div class="container">
   <div class="row">
     <div class="col s12">
@@ -26,6 +31,28 @@ Factors {% endblock %} {% block breadcrumb %}
           <button id="fetchEDAButton" class="btn blue" onclick="fetchEDA()">
             Fetch EDA Visualizations
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col s12 m6">
+      <div class="card rounded-corners">
+        <div class="card-title blue-background white-text">
+          Access Historical Data
+        </div>
+        <div class="card-content lighten-3">
+          <div
+            id="historical-animation"
+            style="width: 100%; height: 90px"
+          ></div>
+          <p>
+            Your can access Historical Data of all saved EDA Visualizations.
+          </p>
+        </div>
+        <div class="card-action center-align">
+          <a class="btn blue" href="{% url 'eda_historical' %}">
+            Access EDA Historical
+          </a>
         </div>
       </div>
     </div>
@@ -164,10 +191,10 @@ Factors {% endblock %} {% block breadcrumb %}
   function generatePDF() {
     const overlay = document.getElementById("loaderOverlay");
     overlay.style.display = "flex"; // Show loader
-  
+
     const fileSelect = document.getElementById("savedFilesDropdown");
     const fileId = fileSelect.value;
-  
+
     // Perform AJAX request to generate PDF
     fetch("/app/generate_pdf/", {
       method: "POST",
@@ -205,6 +232,15 @@ Factors {% endblock %} {% block breadcrumb %}
       .finally(() => {
         overlay.style.display = "none"; // Hide loader
       });
-  }  
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    lottie.loadAnimation({
+      container: document.getElementById("historical-animation"),
+      renderer: "svg",
+      loop: true,
+      autoplay: true,
+      path: "{% static 'json/Animation - 1718784792196.json' %}", // Replace with your Lottie JSON URL
+    });
+  });
 </script>
 {% endblock %}

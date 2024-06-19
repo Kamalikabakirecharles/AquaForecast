@@ -18,4 +18,5 @@ urlpatterns = [
     path('download_image/<int:eda_visualizations_id>/', views.download_image, name='download_image'),
     path('generate_pdf/', views.generate_pdf, name='generate_pdf'),
     path('visualization/', views.visualization_page, name='visualization_page'),
+    path('eda_historical/', views.eda_historical, name='eda_historical'),
 ]
