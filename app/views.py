@@ -491,3 +491,15 @@ def add_location(request):
         form = LocationForm()
 
     return render(request, 'data.html', {'form': form})
+
+def spatial_analysis(request):
+    locations = Location.objects.all()
+    location_data = [{
+        'name': loc.name,
+        'identifier': loc.identifier,
+        'location_type': loc.location_type,
+        'longitude': float(loc.longitude),  # Ensure longitude is a float
+        'latitude': float(loc.latitude)  # Ensure latitude is a float
+    } for loc in locations]
+
+    return render(request, 'spatial_analysis.html', {'locations': json.dumps(location_data)})

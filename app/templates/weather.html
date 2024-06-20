@@ -99,6 +99,15 @@
   .btn{
     background: #003E78 ! important;
   }
+  #clock {
+    background: #003E78 ! important;
+    position: absolute;
+    top: 30%;
+    right: 6%;
+    width: 120px;
+    transform: translate(50%,-50%);
+    border-radius: 5%;
+  }
 </style>
 
 <!-- Loader Overlay -->
@@ -111,6 +120,9 @@
     <div class="col s12">
       <h4>Live Weather</h4>
       <p>Content for Live Weather</p>
+    </div>
+    <div class="col s12 m6">
+      <canvas id="clock"></canvas>
     </div>
     {% for weather_data in weather_data_list %}
       <div class="col s12">
@@ -327,6 +339,125 @@
     startCountdown(countdownDuration); // Start countdown when page loads
   });
 
+  var canvas = document.getElementById("clock");
+  var ctx = canvas.getContext("2d");
+  setInterval(drawClock, 1000); //runs drawClock every second (1000 miliseconds)
+
+  //---FUNCTIONS---//
+
+  function drawClock() {
+    canvas.style.background = "#222222";
+    sizeToWindow(ctx);
+    drawFace(ctx, face_radius);
+    drawMeridiem(ctx, face_radius);
+    drawNumbers(ctx, face_radius);
+    setTime(ctx, face_radius);
+  }
+
+  function sizeToWindow(ctx) {
+    if (window.innerWidth > window.innerHeight) {
+      canvas.height = window.innerHeight * 0.8;
+      canvas.width = canvas.height;
+    } else {
+      canvas.width = window.innerWidth * 0.8;
+      canvas.height = canvas.width;
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    face_radius = canvas.height * 0.45;
+  }
+
+  function drawFace(ctx, face_radius) {
+    var grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, face_radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, face_radius * 0.075, 0, 2 * Math.PI);
+    ctx.fillStyle = "#333333";
+    ctx.fill();
+  }
+
+  function drawMeridiem(ctx, face_radius) {
+    // am/pm
+    var meridiem = new Date().getHours() <= 11 ? "AM" : "PM";
+    ctx.font = face_radius * 0.08 + "px 'Raleway', Arial, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#333333";
+    ctx.fillText(meridiem, 0, face_radius * 0.4);
+    // box
+    ctx.lineWidth = face_radius * 0.005;
+    ctx.strokeStyle = "#333333";
+    ctx.strokeRect(
+      face_radius * -0.08,
+      face_radius * 0.34,
+      face_radius * 0.16,
+      face_radius * 0.115
+    );
+  }
+
+  function drawNumbers(ctx, face_radius) {
+    var ang;
+    var num;
+    ctx.font = face_radius * 0.12 + "px 'Raleway', Arial, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    for (num = 0.2; num <= 12; num += 0.2) {
+      ang = (num * Math.PI) / 6;
+      ctx.rotate(ang);
+      ctx.translate(0, -face_radius * 0.85);
+      ctx.rotate(-ang);
+      if (num.toFixed(1) % 1 === 0) {
+        ctx.fillStyle = "#222222";
+        ctx.fillText(num.toFixed().toString(), 0, 0);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, face_radius * 0.005, 0, 2 * Math.PI);
+        ctx.fillStyle = "#999999";
+        ctx.fill();
+      }
+      ctx.rotate(ang);
+      ctx.translate(0, face_radius * 0.85);
+      ctx.rotate(-ang);
+    }
+  }
+
+  function drawHand(ctx, pos, length, width, color) {
+    ctx.beginPath();
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.moveTo(0, 0);
+    ctx.rotate(pos);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+    ctx.rotate(-pos);
+  }
+
+  function setTime(ctx, face_radius) {
+    var now = new Date();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+    ctx.lineCap = "round";
+    //hour
+    hour = hour % 12;
+    hour =
+      (hour * Math.PI) / 6 +
+      (minute * Math.PI) / (6 * 60) +
+      (second * Math.PI) / (360 * 60);
+    drawHand(ctx, hour, face_radius * 0.5, face_radius * 0.075, "#333333");
+    //minute
+    minute = (minute * Math.PI) / 30 + (second * Math.PI) / (30 * 60);
+    drawHand(ctx, minute, face_radius * 0.65, face_radius * 0.065, "#333333");
+    // second
+    second = (second * Math.PI) / 30;
+    drawHand(ctx, second, face_radius * 0.85, face_radius * 0.02, "red");
+    ctx.beginPath();
+    ctx.arc(0, 0, face_radius * 0.03, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  }
 </script>
 
 {% endblock %}

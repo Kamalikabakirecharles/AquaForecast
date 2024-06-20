@@ -4,15 +4,269 @@
 <a class="breadcrumb">Spatial Analysis</a>
 {% endblock %}
 {% block content %}
+{% load static %}
+<style>
+  /* Your existing CSS styles */
+  .switch label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .switch label input[type="radio"] {
+    display: none;
+  }
+
+  .switch label .lever {
+    width: 50px !important;
+    height: 23px !important;
+    position: relative;
+  }
+
+  .switch label .lever:before,
+  .switch label .lever:after {
+    content: '';
+    position: absolute;
+    transition: all 0.3s ease;
+  }
+
+  .switch label .lever:before {
+    width: 100%;
+    height: 100%;
+    background-color: #ddd;
+    border-radius: 15px;
+    border-color: #003E78;
+  }
+
+  .switch label .lever:after {
+    width: 18px;
+    height: 18px;
+    background-color: #fff;
+    border-radius: 50%;
+    left: 2px;
+    top: -1px;
+  }
+
+  .switch label input[type="radio"]:checked + .lever:after {
+    left: calc(100% - 22px);
+    background-color: #003E78;
+  }
+
+  .switch label span {
+    margin-left: 10px;
+  }
+
+  .switch-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .switch-container .switch {
+    flex: 1 1 calc(50% - 10px);
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */
+    display: none; /* Initially hidden */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Ensure it's on top of other content */
+}
+.loader {
+    width: 150px;
+    height: 150px;
+    background-color: #003e78; /* Use the specified color */
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+      0 5px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+.loader:before,
+.loader:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 45%;
+    top: -40%;
+    background-color: #fff;
+    animation: wave 5s linear infinite;
+}
+.loader:before {
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    animation: wave 5s linear infinite;
+}
+@keyframes wave {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+</style>
+
 <div class="container">
   <div class="row">
     <div class="col s12">
       <h4>Spatial Analysis</h4>
-      <p>Content for Spatial Analysis</p>
+      <div class="card rounded-corners">
+        <div class="card-title">
+          Rwanda Map
+        </div>
+        <div class="card-content">
+          <div id="map" style="height: 500px;"></div>
+        </div>
+        <div class="card-action">
+          <div class="row">
+            <div class="col s12 m6">
+              <h6>Legend:</h6>
+              <p><img src="{% static 'images/water_quality_site.png' %}" alt="Water Quality Site" width="16" height="24"> Water Quality Site</p>
+              <p><img src="{% static 'images/hydrology_station.png' %}" alt="Hydrology Station" width="24" height="24"> Hydrology Station</p>
+              <p><img src="{% static 'images/groundwater_station.png' %}" alt="Groundwater Station" width="24" height="24"> Groundwater Station</p>
+            </div>
+            <div class="col s12 m6">
+              <h6>Filter:</h6>
+              <div class="switch-container">
+                <div class="switch">
+                  <label>
+                    <input type="radio" name="toggle" id="show-all" checked>
+                    <span class="lever"></span>
+                    <span>Show All</span>
+                  </label>
+                </div>
+                <div class="switch">
+                  <label>
+                    <input type="radio" name="toggle" id="show-water-quality">
+                    <span class="lever"></span>
+                    <span>Water Quality Site</span>
+                  </label>
+                </div>
+                <div class="switch">
+                  <label>
+                    <input type="radio" name="toggle" id="show-hydrology">
+                    <span class="lever"></span>
+                    <span>Hydrology Station</span>
+                  </label>
+                </div>
+                <div class="switch">
+                  <label>
+                    <input type="radio" name="toggle" id="show-groundwater">
+                    <span class="lever"></span>
+                    <span>Groundwater Station</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+<div class="overlay"> <!-- Add the overlay here -->
+  <div class="loader"></div> <!-- Move the loader inside the overlay -->
+</div>
+
+<!-- Include Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
 <script>
-  $(".dropdown-trigger").dropdown();
-</script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the map centered on Rwanda
+    var map = L.map('map').setView([-1.9403, 29.8739], 8); // Latitude and longitude of Rwanda
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Function to get custom icon based on location type
+    function getCustomIcon(locationType) {
+      var iconUrl;
+      switch (locationType) {
+        case 'Water Quality Site':
+          iconUrl = '{% static 'images/water_quality_site.png' %}';
+          break;
+        case 'Hydrology Station':
+          iconUrl = '{% static 'images/hydrology_station.png' %}';
+          break;
+        case 'Groundwater Station':
+          iconUrl = '{% static 'images/groundwater_station.png' %}';
+          break;
+        default:
+          iconUrl = '{% static 'images/default_icon.png' %}'; // Default icon if location type is unknown
+          break;
+      }
+
+      return L.icon({
+        iconUrl: iconUrl,
+        iconSize: [16, 24], // Size of the icon
+        iconAnchor: [12, 12], // Point of the icon which will correspond to marker's location
+        popupAnchor: [0, -12] // Point from which the popup should open relative to the iconAnchor
+      });
+    }
+
+    // Function to add markers to the map
+    var markers = [];
+
+    function addMarkers(locations) {
+      locations.forEach(function(location) {
+        var customIcon = getCustomIcon(location.location_type);
+        var marker = L.marker([location.latitude, location.longitude], { icon: customIcon }).addTo(map);
+        marker.bindPopup(`<b>${location.name}</b><br>${location.identifier}<br>${location.location_type}`);
+        markers.push({ marker: marker, locationType: location.location_type });
+      });
+    }
+
+    // Fetch locations data from Django context
+    var locations = {{ locations|safe }};
+
+    // Show loader while fetching data
+    var loader = document.querySelector('.overlay');
+    loader.style.display = "flex";
+
+    // Add markers to the map
+    setTimeout(function() {
+      loader.style.display = 'block'; // Simulating data loading delay
+      addMarkers(locations);
+      loader.style.display = 'none'; // Hide loader after data is loaded
+    }, 1500); // Adjust timeout as per your data loading time
+
+    // Function to filter markers by type
+    function filterMarkers(type) {
+      markers.forEach(function(item) {
+        if (type === 'all' || item.locationType === type) {
+          map.addLayer(item.marker);
+        } else {
+          map.removeLayer(item.marker);
+        }
+      });
+    }
+
+    // Event listeners for filter buttons
+    document.getElementById('show-all').addEventListener('change', function() {
+      filterMarkers('all');
+    });
+    document.getElementById('show-water-quality').addEventListener('change', function() {
+      filterMarkers('Water Quality Site');
+    });
+    document.getElementById('show-hydrology').addEventListener('change', function() {
+      filterMarkers('Hydrology Station');
+    });
+    document.getElementById('show-groundwater').addEventListener('change', function() {
+      filterMarkers('Groundwater Station');
+    });
+  });
+</script> 
 {% endblock %}
