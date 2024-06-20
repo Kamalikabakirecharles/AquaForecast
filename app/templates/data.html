@@ -1,0 +1,338 @@
+{% extends "dashboard.html" %}
+{% block title %}AquaForecast | Data{% endblock %}
+{% block breadcrumb %}
+<a class="breadcrumb">Data</a>
+{% endblock %}
+{% block content %}
+{% load static %}   
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+<style>
+  .card-title {
+    padding: 10px;
+    background-color: #003e78; /* Adjust to your preferred color */
+    color: white;
+  }
+
+  .card-content {
+    padding: 20px;
+  }
+
+  .card-action {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .rounded-corners {
+    border-radius: 8px;
+  }
+
+  .btn {
+    background: #003E78 !important;
+  }
+
+  .icon-button {
+    cursor: pointer;
+    margin-right: 8px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 12px;
+  }
+
+  .action-row {
+    background-color: #003e782e; /* Custom color for the action row */
+    font-size: 0.9em; /* Smaller font size */
+  }
+
+  .action-row i {
+    font-size: 1.2em; /* Smaller icon size */
+  }
+
+  .action-row td {
+    padding: 5px 12px; /* Reduced padding for action row */
+  }
+
+  .modal {
+    max-width: 600px;
+    max-height: 570px;
+  }
+
+  .modal-content {
+    padding: 0; /* Remove padding to align with card style */
+  }
+
+  .modal-header {
+    padding: 10px;
+    background-color: #003e78; /* Adjust to your preferred color */
+    color: white;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  .modal-body {
+    padding: 10px 10px; /* Reduced padding */
+  }
+
+  .modal-footer {
+    padding: 1px;
+  }
+
+  .input-field {
+    margin-top: -15px; /* Reduced margin between fields */
+  }
+
+  .input-field label {
+    left: 0;
+  }
+  .top-row{
+    margin-top: 25px;
+  }
+  .mid-row{
+    margin-top: 10px;
+  }
+  /* Toast Styles */
+  .toast-container {
+    position: fixed;
+    top: 90px;
+    right: 0;
+    margin: 0;
+    z-index: 1001; /* Ensure toast appears above other content */
+  }
+
+  .toast {
+    width: 300px; /* Adjust as needed */
+    background-color: #003E78; /* Background color */
+    color: #fff; /* Text color */
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: block;
+    overflow: hidden;
+  }
+
+  .toast-header {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .toast-body {
+    margin-bottom: 0;
+  }
+
+  .toast-success {
+    background-color: #4CAF50; /* Green */
+  }
+
+  .toast-error {
+    background-color: #F44336; /* Red */
+  }
+  .scrollable-content {
+    max-height: 450px; /* Set your desired max height */
+    overflow-y: auto; /* Enable vertical scrolling */
+  }
+</style>
+
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>Data</h4>
+      <button class="btn waves-effect waves-light blue modal-trigger" data-target="addNewModal"><ion-icon name="add-circle-outline"></ion-icon>Add New</button>
+    </div>
+  </div>
+
+<!-- Display success or error messages -->
+{% if messages %}
+<div class="toast-container">
+  {% for message in messages %}
+  <div class="toast {{ message.tags }}">
+    <div class="toast-header">
+      AquaForecast
+    </div>
+    <div class="toast-body">
+      {{ message }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col s12">
+    <div class="card rounded-corners">
+      <div class="card-title">
+        Locations
+      </div>
+      <div class="card-content scrollable-content">
+        <div class="row">
+          <div class="input-field col s12">
+            <select id="locationTypeFilter">
+              <option value="" selected>All Location Types</option>
+              <option value="Water Quality Site">Water Quality Site</option>
+              <option value="Hydrology Station">Hydrology Station</option>
+              <option value="Groundwater Station">Groundwater Station</option>
+            </select>
+            <label for="locationTypeFilter">Filter by Location Type</label>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="highlight responsive-table">
+            <thead>
+              <tr>
+                <th>Location Name</th>
+                <th>Identifier</th>
+                <th>Location Type</th>
+                <th>Longitude</th>
+                <th>Latitude</th>
+                <th>SRID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for location in locations %}
+              <tr class="location-row" data-location-type="{{ location.location_type }}">
+                <td>{{ location.name }}</td>
+                <td>{{ location.identifier }}</td>
+                <td>{{ location.location_type }}</td>
+                <td>{{ location.longitude }}</td>
+                <td>{{ location.latitude }}</td>
+                <td>{{ location.srid }}</td>
+              </tr>
+              <tr class="action-row">
+                <td colspan="6" style="text-align: right;">
+                  <i class="material-icons icon-button blue-text">edit</i>
+                  <i class="material-icons icon-button red-text">delete</i>
+                  <i class="material-icons icon-button green-text">visibility</i>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-action">
+        <a href="#" class="btn waves-effect waves-light blue">Export Data</a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Add New Modal Structure -->
+<div id="addNewModal" class="modal rounded-corners">
+  <div class="modal-header">
+    <h5>Add New Location</h5>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <form class="col s12" method="post" action="{% url 'add_location' %}">
+        {% csrf_token %}
+        <div class="row top-row">
+          <div class="input-field col s12">
+            <input id="location_name" name="name" type="text" class="validate" required>
+            <label for="location_name">Location Name</label>
+          </div>
+        </div>
+        <div class="row mid-row">
+          <div class="input-field col s12">
+            <input id="identifier" name="identifier" type="text" class="validate" required>
+            <label for="identifier">Identifier</label>
+          </div>
+        </div>
+        <div class="row top-row">
+          <div class="input-field col s12">
+            <select id="location_type" name="location_type" required>
+              <option value="" disabled selected>Choose your option</option>
+              <option value="Water Quality Site">Water Quality Site</option>
+              <option value="Hydrology Station">Hydrology Station</option>
+              <option value="Groundwater Station">Groundwater Station</option>
+            </select>
+            <label for="location_type">Location Type</label>
+          </div>
+        </div>
+        <div class="row mid-row">
+          <div class="input-field col s6">
+            <input id="longitude" name="longitude" type="number" step="any" class="validate" required>
+            <label for="longitude">Longitude</label>
+          </div>
+          <div class="input-field col s6">
+            <input id="latitude" name="latitude" type="number" step="any" class="validate" required>
+            <label for="latitude">Latitude</label>
+          </div>
+        </div>
+        <div class="row mid-row">
+          <div class="input-field col s12">
+            <input id="srid" name="srid" type="number" class="validate" required>
+            <label for="srid">
+              <label for="srid">SRID</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-close waves-effect waves-green btn-flat">Cancel</button>
+          <button type="submit" class="waves-effect waves-light btn blue">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Materialize components
+    var elems = document.querySelectorAll('.modal');
+    var instances = M.Modal.init(elems);
+
+    var selectElems = document.querySelectorAll('select');
+    var selectInstances = M.FormSelect.init(selectElems);
+
+    // Handle modal trigger
+    var modalTrigger = document.querySelector('.modal-trigger');
+    if (modalTrigger) {
+      modalTrigger.addEventListener('click', function() {
+        var instance = M.Modal.getInstance(document.getElementById('addNewModal'));
+        instance.open();
+      });
+    }
+
+    // Filter locations based on Location Type selection
+    var locationTypeFilter = document.getElementById('locationTypeFilter');
+    if (locationTypeFilter) {
+      locationTypeFilter.addEventListener('change', function() {
+        var selectedType = this.value;
+        var locationRows = document.querySelectorAll('.location-row');
+        locationRows.forEach(function(row) {
+          var type = row.getAttribute('data-location-type');
+          if (selectedType === '' || type === selectedType) {
+            row.style.display = 'table-row';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // Display toasts
+    var toastElems = document.querySelectorAll('.toast');
+    var toastOptions = {
+      displayLength: 3000, // Duration in milliseconds
+      inDuration: 300, // Transition in duration
+      outDuration: 375, // Transition out duration
+      classes: 'rounded', // Additional classes for toast
+      completeCallback: function() {} // Callback function after toast dismisses
+    };
+
+    // Initialize Materialize components for toasts
+    var toastInstances = M.Toast.init(toastElems, toastOptions);
+  });
+</script>
+
+{% endblock %}

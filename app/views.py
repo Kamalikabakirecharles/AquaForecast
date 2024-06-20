@@ -8,11 +8,11 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as auth_login
 import pandas as pd
 import requests
+from app.forms import LocationForm
 from app.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.conf import settings
-from .models import WeatherData
 from django.views.decorators.csrf import csrf_exempt
 import seaborn as sns
 import matplotlib
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import os
 from django.core.files.storage import FileSystemStorage
 from io import BytesIO
-from .models import UploadedFile, EDAVisualization
+from .models import UploadedFile, EDAVisualization, Location, WeatherData
 import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -69,6 +69,10 @@ def upload_dataset(request):
 @login_required
 def visualization(request):
     return render(request, 'visualization.html')
+
+def data(request):
+    locations = Location.objects.all()  # Fetch all locations from the database
+    return render(request, 'data.html', {'locations': locations})
 
 
 def signup(request):
@@ -473,3 +477,17 @@ def generate_visualizations(data):
         }
     }
     return visualizations
+
+def add_location(request):
+    if request.method == 'POST':
+        form = LocationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Location added successfully.')
+            return redirect('data')  # Redirect to the locations list or wherever appropriate
+        else:
+            messages.error(request, 'Form is not valid. Please check the data.')
+    else:
+        form = LocationForm()
+
+    return render(request, 'data.html', {'form': form})

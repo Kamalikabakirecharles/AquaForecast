@@ -55,3 +55,19 @@ class EDAVisualization(models.Model):
     def __str__(self):
         return f"EDA Visualization for {self.uploaded_file.file.name}"
     
+class Location(models.Model):
+    LOCATION_TYPES = [
+        ('Water Quality Site', 'Water Quality Site'),
+        ('Hydrology Station', 'Hydrology Station'),
+        ('Groundwater Station', 'Groundwater Station'),
+    ]
+    
+    name = models.CharField(max_length=255)
+    identifier = models.CharField(max_length=255)
+    location_type = models.CharField(max_length=255, choices=LOCATION_TYPES)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    srid = models.IntegerField()
+
+    def __str__(self):
+        return self.name

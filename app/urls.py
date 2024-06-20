@@ -19,4 +19,6 @@ urlpatterns = [
     path('generate_pdf/', views.generate_pdf, name='generate_pdf'),
     path('visualization/', views.visualization_page, name='visualization_page'),
     path('eda_historical/', views.eda_historical, name='eda_historical'),
+    path('data/', views.data, name='data'),
+    path('add-location/', views.add_location, name='add_location'),
 ]
