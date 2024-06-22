@@ -4,13 +4,13 @@
 <a class="breadcrumb">Data</a>
 {% endblock %}
 {% block content %}
-{% load static %}   
+{% load static %}
+
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-
 <style>
   .card-title {
     padding: 10px;
@@ -33,11 +33,12 @@
 
   .btn {
     background: #003E78 !important;
+    margin-bottom: 5px;
   }
 
   .icon-button {
     cursor: pointer;
-    margin-right: 8px;
+    margin-top: 3px;
   }
 
   .table-wrapper {
@@ -137,11 +138,71 @@
     background-color: #F44336; /* Red */
   }
   .scrollable-content {
-    max-height: 450px; /* Set your desired max height */
+    max-height: 500px; /* Set your desired max height */
     overflow-y: auto; /* Enable vertical scrolling */
   }
-</style>
 
+  /* Custom styles for location data */
+  .location-data-row {
+    display: none;
+  }
+
+  .location-data-table {
+    margin-left: 40px;
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */
+    display: none; 
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 9999; /* Ensure it's on top of other content */
+  }
+  
+  .loader {
+    width: 150px;
+    height: 150px;
+    background-color: #003e78; /* Use the specified color */
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+                0 5px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+  
+  .loader:before,
+  .loader:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 45%;
+    top: -40%;
+    background-color: #fff;
+    animation: wave 5s linear infinite;
+  }
+  
+  .loader:before {
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    animation: wave 5s linear infinite;
+  }
+  
+  @keyframes wave {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+</style>
 <div class="container">
   <div class="row">
     <div class="col s12">
@@ -149,140 +210,201 @@
       <button class="btn waves-effect waves-light blue modal-trigger" data-target="addNewModal"><ion-icon name="add-circle-outline"></ion-icon>Add New</button>
     </div>
   </div>
+  <!-- Display success or error messages -->
+  {% if messages %}
 
-<!-- Display success or error messages -->
-{% if messages %}
-<div class="toast-container">
-  {% for message in messages %}
-  <div class="toast {{ message.tags }}">
-    <div class="toast-header">
-      AquaForecast
-    </div>
-    <div class="toast-body">
-      {{ message }}
-    </div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-<div class="row">
-  <div class="col s12">
-    <div class="card rounded-corners">
-      <div class="card-title">
-        Locations
+  <div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+      <div class="toast-header">
+        AquaForecast
       </div>
-      <div class="card-content scrollable-content">
-        <div class="row">
-          <div class="input-field col s12">
-            <select id="locationTypeFilter">
-              <option value="" selected>All Location Types</option>
-              <option value="Water Quality Site">Water Quality Site</option>
-              <option value="Hydrology Station">Hydrology Station</option>
-              <option value="Groundwater Station">Groundwater Station</option>
-            </select>
-            <label for="locationTypeFilter">Filter by Location Type</label>
-          </div>
-        </div>
-        <div class="table-wrapper">
-          <table class="highlight responsive-table">
-            <thead>
-              <tr>
-                <th>Location Name</th>
-                <th>Identifier</th>
-                <th>Location Type</th>
-                <th>Longitude</th>
-                <th>Latitude</th>
-                <th>SRID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for location in locations %}
-              <tr class="location-row" data-location-type="{{ location.location_type }}">
-                <td>{{ location.name }}</td>
-                <td>{{ location.identifier }}</td>
-                <td>{{ location.location_type }}</td>
-                <td>{{ location.longitude }}</td>
-                <td>{{ location.latitude }}</td>
-                <td>{{ location.srid }}</td>
-              </tr>
-              <tr class="action-row">
-                <td colspan="6" style="text-align: right;">
-                  <i class="material-icons icon-button blue-text">edit</i>
-                  <i class="material-icons icon-button red-text">delete</i>
-                  <i class="material-icons icon-button green-text">visibility</i>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card-action">
-        <a href="#" class="btn waves-effect waves-light blue">Export Data</a>
+      <div class="toast-body">
+        {{ message }}
       </div>
     </div>
+    {% endfor %}
   </div>
-</div>
-</div>
+  {% endif %}
+  <div class="row">
+    <div class="col s12">
+      <div class="card rounded-corners">
+        <div class="card-title">
+          Locations
+        </div>
+        <div class="card-content scrollable-content">
+          <div class="row">
+            <div class="input-field col s12">
+              <select id="locationTypeFilter">
+                <option value="" selected>All Location Types</option>
+                <option value="Water Quality Site">Water Quality Site</option>
+                <option value="Hydrology Station">Hydrology Station</option>
+                <option value="Groundwater Station">Groundwater Station</option>
+              </select>
+              <label for="locationTypeFilter">Filter by Location Type</label>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="highlight responsive-table">
+              <thead>
+                <tr>
+                  <th>Location Name</th>
+                  <th>Identifier</th>
+                  <th>Location Type</th>
+                  <th>Longitude</th>
+                  <th>Latitude</th>
+                  <th>SRID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for location in locations %}
+                <tr class="location-row" data-location-type="{{ location.location_type }}">
+                  <td>{{ location.name }}</td>
+                  <td>{{ location.identifier }}</td>
+                  <td>{{ location.location_type }}</td>
+                  <td>{{ location.longitude }}</td>
+                  <td>{{ location.latitude }}</td>
+                  <td>{{ location.srid }}</td>
+                  <td class="action-row">
+                    <form id="deleteForm" action="{% url 'delete_location' %}" method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="location_id" value="{{ location.id }}">
+                      <button type="submit" class="btn waves-effect waves-light green modal-trigger">
+                          <i class="material-icons icon-button white-text">delete</i>
+                      </button>
+                    </form>
+                    <button class="btn waves-effect waves-light green open-add-data-modal" data-location-id="{{ location.id }}">
+                      <i class="material-icons icon-button white-text">add</i>
+                    </button>
+                    <button class="btn waves-effect waves-light blue fetch-location-data" data-location-id="{{ location.id }}">
+                      <i class="material-icons icon-button white-text">expand_more</i>
+                    </button>
+                  </td>              
+                </tr>
+                <tr class="location-data-row" id="location-data-{{ location.id }}">
+                  <td colspan="7">
+                    <div class="location-data-table">
+                      <table class="highlight responsive-table">
+                        <thead>
+                          <tr>
+                            <th>Timestamp</th>
+                            <th>Value</th>
+                          </tr>
+                        </thead>
+                        <tbody id="location-data-body-{{ location.id }}">
+                          <!-- Location data will be populated here -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- Add New Modal Structure -->
-<div id="addNewModal" class="modal rounded-corners">
-  <div class="modal-header">
-    <h5>Add New Location</h5>
+
+  <!-- Add New Location Modal Structure -->
+  <div id="addNewModal" class="modal rounded-corners">
+    <div class="modal-header">
+      <h5>Add New Location</h5>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <form class="col s12" method="post" action="{% url 'add_location' %}">
+          {% csrf_token %}
+          <div class="row top-row">
+            <div class="input-field col s12">
+              <input id="location_name" name="name" type="text" class="validate" required>
+              <label for="location_name">Location Name</label>
+            </div>
+          </div>
+          <div class="row mid-row">
+            <div class="input-field col s12">
+              <input id="identifier" name="identifier" type="text" class="validate" required>
+              <label for="identifier">Identifier</label>
+            </div>
+          </div>
+          <div class="row top-row">
+            <div class="input-field col s12">
+              <select id="location_type" name="location_type" required>
+                <option value="" disabled selected>Choose your option</option>
+                <option value="Water Quality Site">Water Quality Site</option>
+                <option value="Hydrology Station">Hydrology Station</option>
+                <option value="Groundwater Station">Groundwater Station</option>
+              </select>
+              <label for="location_type">Location Type</label>
+            </div>
+          </div>
+          <div class="row mid-row">
+            <div class="input-field col s6">
+              <input id="longitude" name="longitude" type="number" step="any" class="validate" required>
+              <label for="longitude">Longitude</label>
+            </div>
+            <div class="input-field col s6">
+              <input id="latitude" name="latitude" type="number" step="any" class="validate" required>
+              <label for="latitude">Latitude</label>
+            </div>
+          </div>
+          <div class="row mid-row">
+            <div class="input-field col s12">
+              <input id="srid" name="srid" type="number" class="validate" required>
+              <label for="srid">
+                <label for="srid">SRID</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="modal-close waves-effect waves-green btn-flat">Cancel</button>
+            <button type="submit" class="waves-effect waves-light btn blue">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
-  <div class="modal-body">
-    <div class="row">
-      <form class="col s12" method="post" action="{% url 'add_location' %}">
-        {% csrf_token %}
-        <div class="row top-row">
-          <div class="input-field col s12">
-            <input id="location_name" name="name" type="text" class="validate" required>
-            <label for="location_name">Location Name</label>
+  </div>
+
+  <!-- Add Location Data Modal Structure -->
+  <div id="addDataModal" class="modal rounded-corners">
+    <div class="modal-header">
+      <h5>Add Location Data</h5>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <form class="col s12" method="post" action="{% url 'add_location_data' %}">
+          {% csrf_token %}
+          <div class="row top-row">
+            <div class="input-field col s12">
+              <input id="location_data_location_id" name="location" type="hidden" class="validate" required readonly>
+            </div>
+          </div>        
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="timestamp" name="timestamp" type="text" class="validate" required>
+              <label for="timestamp">Timestamp</label>
+            </div>
           </div>
-        </div>
-        <div class="row mid-row">
-          <div class="input-field col s12">
-            <input id="identifier" name="identifier" type="text" class="validate" required>
-            <label for="identifier">Identifier</label>
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="value" name="value" type="number" step="any" class="validate" required>
+              <label for="value">Value</label>
+            </div>
           </div>
-        </div>
-        <div class="row top-row">
-          <div class="input-field col s12">
-            <select id="location_type" name="location_type" required>
-              <option value="" disabled selected>Choose your option</option>
-              <option value="Water Quality Site">Water Quality Site</option>
-              <option value="Hydrology Station">Hydrology Station</option>
-              <option value="Groundwater Station">Groundwater Station</option>
-            </select>
-            <label for="location_type">Location Type</label>
+          <div class="modal-footer">
+            <button class="modal-close waves-effect waves-green btn-flat">Cancel</button>
+            <button type="submit" class="waves-effect waves-light btn blue">Add</button>
           </div>
-        </div>
-        <div class="row mid-row">
-          <div class="input-field col s6">
-            <input id="longitude" name="longitude" type="number" step="any" class="validate" required>
-            <label for="longitude">Longitude</label>
-          </div>
-          <div class="input-field col s6">
-            <input id="latitude" name="latitude" type="number" step="any" class="validate" required>
-            <label for="latitude">Latitude</label>
-          </div>
-        </div>
-        <div class="row mid-row">
-          <div class="input-field col s12">
-            <input id="srid" name="srid" type="number" class="validate" required>
-            <label for="srid">
-              <label for="srid">SRID</label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="modal-close waves-effect waves-green btn-flat">Cancel</button>
-          <button type="submit" class="waves-effect waves-light btn blue">Add</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>
+<div class="overlay"> 
+  <div class="loader"></div> 
 </div>
 
 <script>
@@ -323,17 +445,57 @@
     // Display toasts
     var toastElems = document.querySelectorAll('.toast');
     var toastOptions = {
-      displayLength: 3000, // Duration in milliseconds
-      inDuration: 300, // Transition in duration
-      outDuration: 375, // Transition out duration
-      classes: 'rounded', // Additional classes for toast
-      completeCallback: function() {} // Callback function after toast dismisses
+      displayLength: 3000,
+      inDuration: 300,
+      outDuration: 375,
+      classes: 'rounded',
+      completeCallback: function() {}
     };
 
-    // Initialize Materialize components for toasts
-    var toastInstances = M.Toast.init(toastElems, toastOptions);
+    // Handle expand/collapse and fetching location data
+    $('.fetch-location-data').on('click', function() {
+      var locationId = $(this).data('location-id');
+      var locationDataRow = $('#location-data-' + locationId);
+      if (locationDataRow.is(':visible')) {
+        locationDataRow.hide();
+      } else {
+        var loader = document.querySelector('.overlay');
+        loader.style.display = "flex"; // Show loader before AJAX request
+        $.ajax({
+          url: '{% url "get_location_data" %}',
+          method: 'POST',
+          data: {
+            location_id: locationId,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+          },
+          success: function(response) {
+            var tbody = $('#location-data-body-' + locationId);
+            tbody.empty();
+            response.data.forEach(function(data) {
+              tbody.append('<tr><td>' + data.timestamp + '</td><td>' + data.value + '</td></tr>');
+            });
+            locationDataRow.show();
+            var loader = document.querySelector('.overlay');
+              loader.style.display = "none"; // Hide loader after successful AJAX request
+          },
+          error: function() {
+            M.toast({html: 'Failed to fetch location data', classes: 'toast-error'});
+            var loader = document.querySelector('.overlay');
+              loader.style.display = "none"; // Hide loader after successful AJAX request
+          }
+        });
+      }
+    });
   });
+
+  // Handle the click event for the add data button
+  $('.open-add-data-modal').on('click', function() {
+    var locationId = $(this).data('location-id');
+    $('#location_data_location_id').val(locationId).focus();
+    var instance = M.Modal.getInstance(document.getElementById('addDataModal'));
+    instance.open();
+  });
+
   $(".dropdown-trigger").dropdown();
 </script>
-
 {% endblock %}

@@ -71,3 +71,11 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
+    
+class LocationData(models.Model):
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='data')
+    timestamp = models.DateTimeField()
+    value = models.FloatField()
+
+    def __str__(self):
+        return f"{self.location.name} - {self.timestamp} - {self.value}"

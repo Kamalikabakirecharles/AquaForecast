@@ -8,7 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as auth_login
 import pandas as pd
 import requests
-from app.forms import LocationForm
+from app.forms import LocationDataForm, LocationForm
 from app.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import os
 from django.core.files.storage import FileSystemStorage
 from io import BytesIO
-from .models import UploadedFile, EDAVisualization, Location, WeatherData
+from .models import LocationData, UploadedFile, EDAVisualization, Location, WeatherData
 import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -503,3 +503,46 @@ def spatial_analysis(request):
     } for loc in locations]
 
     return render(request, 'spatial_analysis.html', {'locations': json.dumps(location_data)})
+
+def delete_location(request):
+    if request.method == 'POST':
+        location_id = request.POST.get('location_id')
+        location = get_object_or_404(Location, id=location_id)
+        location.delete()
+        messages.success(request, 'Location deleted successfully.')
+        return redirect('data')  # Adjust 'data' to your actual data view name
+    
+    # Handle cases where the request is not POST (optional)
+    return redirect('data')  # Adjust 'data' to your actual data view name
+
+def get_location_data(request):
+    location_id = request.POST.get('location_id')
+    location = get_object_or_404(Location, id=location_id)
+    location_data = LocationData.objects.filter(location=location)
+    
+    data = {
+        "location_name": location.name,
+        "identifier": location.identifier,
+        "location_type": location.location_type,
+        "longitude": location.longitude,
+        "latitude": location.latitude,
+        "srid": location.srid,
+        "data": list(location_data.values())  # Adjust fields as necessary
+    }
+    
+    return JsonResponse(data)
+
+def add_location_data(request):
+    if request.method == 'POST':
+        form = LocationDataForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Location Data added successfully.')
+            return redirect('data')
+        else:
+            print(form.errors)  # Print form errors to the console for debugging
+            messages.error(request, 'Form is not valid. Please check the data.')
+    else:
+        form = LocationDataForm()
+
+    return render(request, 'data.html', {'form': form})

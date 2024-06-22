@@ -21,4 +21,8 @@ urlpatterns = [
     path('eda_historical/', views.eda_historical, name='eda_historical'),
     path('data/', views.data, name='data'),
     path('add-location/', views.add_location, name='add_location'),
+    path('delete_location/', views.delete_location, name='delete_location'),
+    path('location-data/', views.get_location_data, name='get_location_data'),
+    path('add_location_data/', views.add_location_data, name='add_location_data'),
+    
 ]
