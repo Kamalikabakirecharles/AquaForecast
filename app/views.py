@@ -266,20 +266,25 @@ def perform_eda(df):
     return visualizations
 
 
-
-
 @csrf_exempt
 def upload_dataset(request):
     if request.method == 'POST' and request.FILES.get('file'):
         uploaded_file = request.FILES['file']
+        
+        # Log the uploaded file details
+        print(f"Uploaded file: {uploaded_file.name}, size: {uploaded_file.size}")
 
         # Save the uploaded file to the database
         uploaded_instance = UploadedFile(file=uploaded_file)
         uploaded_instance.save()
 
         try:
-            # Read the uploaded CSV file into a Pandas DataFrame
+            # Read the uploaded CSV file into a Pandas DataFrame directly from the uploaded file object
             df = pd.read_csv(uploaded_file)
+
+            # Log DataFrame info
+            print(f"DataFrame info: {df.info()}")
+            print(f"DataFrame head:\n{df.head()}")
 
             # Perform exploratory data analysis (EDA)
             visualizations = perform_eda(df)
@@ -287,28 +292,37 @@ def upload_dataset(request):
             # Get all saved files from the database (updated list)
             saved_files = UploadedFile.objects.all()
 
-            context = {
-                'saved_files': saved_files,
-                'visualizations': visualizations,
-            }
-
-            return render(request, 'environmental_factors.html', context)
+            return JsonResponse({'success': True, 'message': 'File uploaded successfully!'})
 
         except pd.errors.EmptyDataError:
-            return HttpResponseBadRequest("Uploaded file is empty or invalid")
+            print("EmptyDataError: The uploaded file is empty or invalid.")
+            return JsonResponse({'success': True, 'message': 'File uploaded successfully!'})
+
+        except Exception as e:
+            print(f"Error processing file: {e}")
+            return JsonResponse({'success': False, 'message': f'An error occurred while processing the file: {e}'})
 
     elif request.method == 'POST':
+        print("No file received in request.")
         return JsonResponse({'success': False, 'message': 'No file received in request'})
 
     # Fetch all saved files for the initial rendering of the page
     saved_files = UploadedFile.objects.all()
 
-    # Render the environmental_factors.html template for GET requests or if no file uploaded
+    # Render the upload_dataset.html template for GET requests or if no file uploaded
     context = {
         'saved_files': saved_files,
         'visualizations': None,  # or initialize as needed
     }
     return render(request, 'upload_dataset.html', context)
+
+@csrf_exempt
+def delete_dataset(request, dataset_id):
+    if request.method == 'DELETE':
+        dataset = get_object_or_404(UploadedFile, id=dataset_id)
+        dataset.delete()
+        return JsonResponse({'success': True, 'message': 'Dataset deleted successfully!'})
+    return JsonResponse({'success': False, 'message': 'Failed to delete dataset'}, status=400)
 
 @csrf_exempt
 def environmental_factors(request):
@@ -597,3 +611,10 @@ def historical_analysis(request):
         'location_data': location_data
     }
     return render(request, 'historical_analysis.html', context)
+
+def delete_visualization(request, visualization_id):
+    if request.method == 'DELETE':
+        visualization = get_object_or_404(EDAVisualization, id=visualization_id)
+        visualization.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)

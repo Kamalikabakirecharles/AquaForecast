@@ -451,6 +451,14 @@
       classes: 'rounded',
       completeCallback: function() {}
     };
+    toastElems.forEach(function(toast) {
+      M.toast({
+        html: toast.innerHTML,
+        displayLength: toastOptions.displayLength,
+        classes: toastOptions.classes + ' ' + toast.classList.toString().replace('toast ', '')
+      });
+      toast.remove(); // Remove the original element after displaying the toast
+    });
 
     // Handle expand/collapse and fetching location data
     $('.fetch-location-data').on('click', function() {

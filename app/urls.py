@@ -15,6 +15,7 @@ urlpatterns = [
     path('environmental_factors/', views.environmental_factors, name='environmental_factors'),
     path('save_weather_data/', views.save_weather_data, name='save_weather_data'),
     path('upload_dataset/', views.upload_dataset, name='upload_dataset'),
+    path('delete_dataset/<int:dataset_id>/', views.delete_dataset, name='delete_dataset'),
     path('download_image/<int:eda_visualizations_id>/', views.download_image, name='download_image'),
     path('generate_pdf/', views.generate_pdf, name='generate_pdf'),
     path('visualization/', views.visualization_page, name='visualization_page'),
@@ -25,5 +26,6 @@ urlpatterns = [
     path('location-data/', views.get_location_data, name='get_location_data'),
     path('add_location_data/', views.add_location_data, name='add_location_data'),
     path('location_visualization/', views.location_visualization, name='location_visualization'),
+    path('delete_visualization/<int:visualization_id>/', views.delete_visualization, name='delete_visualization'),
     
 ]
