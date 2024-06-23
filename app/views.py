@@ -28,7 +28,8 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from PIL import Image
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from django.db.models import Exists, OuterRef
+from django.utils.dateparse import parse_date
 
 
 
@@ -47,9 +48,6 @@ def signup(request):
 def dashboard(request):
     return render(request, 'dashboard_design.html')
 
-@login_required
-def historical_analysis(request):
-    return render(request, 'historical_analysis.html')
 
 @login_required
 def spatial_analysis(request):
@@ -572,3 +570,30 @@ def generate_location_visualizations(data):
         'value': data['value'].tolist()  
     }
     return visualizations
+
+
+def historical_analysis(request):
+    # Get locations that have data
+    locations_with_data = Location.objects.annotate(
+        has_data=Exists(
+            LocationData.objects.filter(location=OuterRef('pk'))
+        )
+    ).filter(has_data=True)
+
+    location_data = []
+
+    for location in locations_with_data:
+        data = location.data.order_by('timestamp').values('timestamp', 'value')
+        processed_data = {
+            'timestamps': [entry['timestamp'].strftime('%Y-%m-%dT%H:%M:%S') for entry in data],
+            'values': [entry['value'] for entry in data]
+        }
+        location_data.append({
+            'name': location.name,
+            'data': processed_data
+        })
+
+    context = {
+        'location_data': location_data
+    }
+    return render(request, 'historical_analysis.html', context)

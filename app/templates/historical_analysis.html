@@ -4,15 +4,297 @@
 <a class="breadcrumb">Historical Analysis</a>
 {% endblock %}
 {% block content %}
+<style>
+  .btn {
+    background: #003E78 !important;
+    margin-right: 40px;
+    margin-left: 40px;
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */
+    display: none;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 9999; /* Ensure it's on top of other content */
+  }
+
+  .loader {
+    width: 150px;
+    height: 150px;
+    background-color: #003e78; /* Use the specified color */
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+      0 5px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  .loader:before,
+  .loader:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 45%;
+    top: -40%;
+    background-color: #fff;
+    animation: wave 5s linear infinite;
+  }
+
+  .loader:before {
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    animation: wave 5s linear infinite;
+  }
+
+  @keyframes wave {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  #chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px; /* Adjust height as needed */
+  }
+
+  .zoom-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .zoom-buttons button {
+    margin: 0 5px;
+  }
+</style>
 <div class="container">
   <div class="row">
     <div class="col s12">
       <h4>Historical Analysis</h4>
       <p>Content for Historical Analysis</p>
+      
+      <div class="card rounded-corners">
+        <div class="card-title">Select Chart Design:</div>
+        <div class="card-content">
+          <div>
+            <select id="chartType" class="browser-default">
+              <option value="line" selected>Line Chart Design</option>
+              <option value="bar">Bar Chart Design</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      {% for location in location_data %}
+      <div class="card rounded-corners">
+        <div class="card-title">{{ location.name }}</div>
+        <div class="card-content">
+          <canvas id="chart-{{ forloop.counter }}"></canvas>
+        </div>
+        <div class="card-action">
+          <button class="btn waves-effect waves-light blue" onclick="downloadCSV('{{ location.name }}', {{ location.data.timestamps|safe }}, {{ location.data.values|safe }})">Download Data</button>
+          <button class="btn waves-effect waves-light blue" id="download-image-{{ forloop.counter }}">Download Image</button>
+        </div>
+      </div>
+      {% endfor %}
+      
+      <div class="card rounded-corners">
+        <div class="card-title">Actions</div>
+        <div class="card-content">
+          <div class="zoom-buttons">
+            <button class="btn waves-effect waves-light blue" id="zoomInBtn">Zoom In</button>
+            <button class="btn waves-effect waves-light blue" id="zoomOutBtn">Zoom Out</button>
+            <button class="btn waves-effect waves-light blue" id="resetZoomBtn">Reset Zoom</button>
+          </div>
+        </div>
+      </div>
+      
     </div>
   </div>
+  <div class="overlay"> 
+    <div class="loader"></div> 
+  </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var loader = document.querySelector('.overlay');
+    
+    var chartType = 'line';
+    document.getElementById('chartType').addEventListener('change', function(event) {
+      chartType = event.target.value;
+      updateCharts();
+    });
+
+    var charts = [];
+
+    function createChart(ctx, data, type) {
+      return new Chart(ctx, {
+        type: type,
+        data: {
+          labels: data.timestamps,
+          datasets: [{
+            label: 'Value',
+            data: data.values,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            pointRadius: 0 // Hide data points for line and bar charts
+          }]
+        },
+        options: {
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day',
+                tooltipFormat: 'PPpp',
+                displayFormats: {
+                  day: 'MMM d',
+                }
+              },
+              ticks: {
+                source: 'auto'
+              }
+            },
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x'
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'x'
+              }
+            },
+            annotation: {
+              annotations: {
+                line1: {
+                  type: 'line',
+                  yMin: 5,
+                  yMax: 5,
+                  borderColor: 'red',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Target',
+                    enabled: true,
+                    position: 'end'
+                  }
+                }
+              }
+            },
+            datalabels: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += Math.round(context.parsed.y * 100) / 100;
+                  return label;
+                }
+              }
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          }
+        }
+      });
+    }
+
+    function updateCharts() {
+      var loader = document.querySelector('.overlay');
+          loader.style.display = "flex"; // Show loader before updating charts
+
+      charts.forEach(chart => chart.destroy());
+      charts = [];
+      {% for location in location_data %}
+      var ctx{{ forloop.counter }} = document.getElementById('chart-{{ forloop.counter }}').getContext('2d');
+      var chart{{ forloop.counter }} = createChart(ctx{{ forloop.counter }}, {{ location.data|safe }}, chartType);
+      charts.push(chart{{ forloop.counter }});
+      document.getElementById('download-image-{{ forloop.counter }}').addEventListener('click', function() {
+        var link = document.createElement('a');
+        link.href = chart{{ forloop.counter }}.toBase64Image();
+        link.download = '{{ location.name }}_chart.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+      {% endfor %}
+      loader.style.display = "none"; // Hide loader after updating charts
+    }
+
+    updateCharts();
+
+    loader.style.display = "none"; // Hide loader after successful chart rendering
+
+    // Zoom Buttons
+    document.getElementById('zoomInBtn').addEventListener('click', function() {
+      charts.forEach(chart => chart.zoom(1.2));
+    });
+
+    document.getElementById('zoomOutBtn').addEventListener('click', function() {
+      charts.forEach(chart => chart.zoom(0.8));
+    });
+
+    document.getElementById('resetZoomBtn').addEventListener('click', function() {
+      charts.forEach(chart => chart.resetZoom());
+    });
+  });
+
+  // Function to download data as CSV
+  function downloadCSV(locationName, timestamps, values) {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Timestamp,Value\n";
+
+    timestamps.forEach((timestamp, index) => {
+      csvContent += `${timestamp},${values[index]}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", locationName + "_data.csv");
+    document.body.appendChild(link);
+
+    link.click();
+  }
   $(".dropdown-trigger").dropdown();
 </script>
 {% endblock %}
