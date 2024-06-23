@@ -28,6 +28,7 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from PIL import Image
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 
 
@@ -495,6 +496,7 @@ def add_location(request):
 def spatial_analysis(request):
     locations = Location.objects.all()
     location_data = [{
+        'id': loc.id,
         'name': loc.name,
         'identifier': loc.identifier,
         'location_type': loc.location_type,
@@ -546,3 +548,27 @@ def add_location_data(request):
         form = LocationDataForm()
 
     return render(request, 'data.html', {'form': form})
+
+def location_visualization(request):
+    location_id = request.GET.get('location_id') 
+    location = get_object_or_404(Location, id=location_id)
+    location_data = LocationData.objects.filter(location=location).order_by('timestamp')
+
+    # Convert queryset to DataFrame
+    data = pd.DataFrame(list(location_data.values()))
+
+    # Generate visualizations data
+    visualizations = generate_location_visualizations(data)
+
+    return render(request, 'location_visualization.html', {
+        'location': location,
+        'labels': json.dumps(visualizations['timestamps']),  # Convert timestamps to JSON
+        'value': json.dumps(visualizations['value'])  # Convert values to JSON
+    })
+
+def generate_location_visualizations(data):
+    visualizations = {
+        'timestamps': data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+        'value': data['value'].tolist()  
+    }
+    return visualizations

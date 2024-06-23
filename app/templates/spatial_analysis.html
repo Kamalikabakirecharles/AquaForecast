@@ -113,6 +113,9 @@
         transform: rotate(360deg);
     }
 }
+.btn{
+  background: #003E78 ! important;
+}
 </style>
 
 <div class="container">
@@ -224,8 +227,13 @@
       locations.forEach(function(location) {
         var customIcon = getCustomIcon(location.location_type);
         var marker = L.marker([location.latitude, location.longitude], { icon: customIcon }).addTo(map);
-        marker.bindPopup(`<b>${location.name}</b><br>${location.identifier}<br>${location.location_type}`);
-        markers.push({ marker: marker, locationType: location.location_type });
+
+        // Customize marker popup content with a button
+        var popupContent = `<b>${location.name}</b><br>${location.identifier}<br>${location.location_type}<br><a class="btn waves-effect waves-light" href="{% url 'location_visualization' %}?location_id=${location.id}">Visualize</a>`;
+
+        
+        marker.bindPopup(popupContent);
+        markers.push({ marker: marker, locationType: location.location_type, locationId: location.id });
       });
     }
 

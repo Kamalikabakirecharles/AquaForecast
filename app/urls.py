@@ -24,5 +24,6 @@ urlpatterns = [
     path('delete_location/', views.delete_location, name='delete_location'),
     path('location-data/', views.get_location_data, name='get_location_data'),
     path('add_location_data/', views.add_location_data, name='add_location_data'),
+    path('location_visualization/', views.location_visualization, name='location_visualization'),
     
 ]

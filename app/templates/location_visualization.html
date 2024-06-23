@@ -1,0 +1,257 @@
+{% extends "dashboard.html" %} {% block title %}AquaForecast | Location
+Visualization{% endblock %} {% block breadcrumb %}
+<a class="breadcrumb" href="{% url 'spatial_analysis' %}">Spatial Analysis</a>
+<a class="breadcrumb">Location Visualization</a>
+{% endblock %} {% block content %}
+<style>
+  .btn {
+    background: #003e78 !important;
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */
+    display: none;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 9999; /* Ensure it's on top of other content */
+  }
+
+  .loader {
+    width: 150px;
+    height: 150px;
+    background-color: #003e78; /* Use the specified color */
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+      0 5px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  .loader:before,
+  .loader:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 45%;
+    top: -40%;
+    background-color: #fff;
+    animation: wave 5s linear infinite;
+  }
+
+  .loader:before {
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    animation: wave 5s linear infinite;
+  }
+
+  @keyframes wave {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  #chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px; /* Adjust height as needed */
+  }
+
+  .zoom-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .zoom-buttons button {
+    margin: 0 5px;
+  }
+</style>
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h4>{{ location.name }} Visualization</h4>
+      <p>Content for location visualization</p>
+      <div id="chart-container">
+        <div class="card rounded-corners">
+          <div class="card-title">Time series for {{ location.name }}</div>
+          <div class="card-content">
+            <button class="btn waves-effect waves-light blue" id="zoomInBtn">
+              <ion-icon name="add-circle-outline"></ion-icon> Zoom In
+            </button>
+            <button class="btn waves-effect waves-light blue" id="zoomOutBtn">
+              <ion-icon name="remove-circle-outline"></ion-icon> Zoom Out
+            </button>
+            <button class="btn waves-effect waves-light blue" id="resetZoomBtn">
+              <ion-icon name="refresh-circle-outline"></ion-icon> Reset Zoom
+            </button>
+            <canvas id="chart"></canvas>
+          </div>
+          <div class="card-action">
+            <button class="btn waves-effect waves-light blue" id="exportBtn">
+              Export as Image
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Loader Overlay -->
+      <div class="overlay">
+        <div class="loader"></div>
+      </div>
+      <!-- Ensure the canvas element exists with unique id="chart" -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          var loader = document.querySelector('.overlay');
+          loader.style.display = "flex"; // Show loader before AJAX request
+
+          var ctx = document.getElementById('chart').getContext('2d'); // Get canvas context
+
+          // Destroy existing chart instance if it exists
+          if (window.myChart) {
+            window.myChart.destroy();
+          }
+
+          // Initialize new Chart.js instance
+          var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: {{ labels|safe }},  // Insert timestamps here
+              datasets: [{
+                label: 'Data',
+                data: {{ value|safe }},  // Insert values here
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                pointRadius: 0 // Hide data points
+              }]
+            },
+            options: {
+              scales: {
+                x: {
+                  type: 'time', // Ensure x-axis is treated as a time series
+                  time: {
+                    unit: 'day', // Adjust time axis unit as per your data density
+                    tooltipFormat: 'PPpp', // Display format for tooltips
+                    displayFormats: {
+                      day: 'MMM d', // Format for the x-axis labels
+                    }
+                  },
+                  ticks: {
+                    source: 'auto' // Automatically determine tick intervals
+                  }
+                },
+                y: {
+                  beginAtZero: true
+                }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                zoom: {
+                  pan: {
+                    enabled: true,
+                    mode: 'x'
+                  },
+                  zoom: {
+                    wheel: {
+                      enabled: true
+                    },
+                    pinch: {
+                      enabled: true
+                    },
+                    mode: 'x'
+                  }
+                },
+                annotation: {
+                  annotations: {
+                    line1: {
+                      type: 'line',
+                      yMin: 5,
+                      yMax: 5,
+                      borderColor: 'red',
+                      borderWidth: 2,
+                      label: {
+                        content: 'Target',
+                        enabled: true,
+                        position: 'end'
+                      }
+                    }
+                  }
+                },
+                datalabels: {
+                  display: true,
+                  align: 'top',
+                  formatter: function(value, context) {
+                    return Math.round(value * 100) / 100;
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                        label += ': ';
+                      }
+                      label += Math.round(context.parsed.y * 100) / 100;
+                      return label;
+                    }
+                  }
+                }
+              },
+              interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+              }
+            }
+          });
+
+          window.myChart = chart; // Store the chart instance globally if needed
+
+          // Hide loader after successful chart rendering
+          loader.style.display = "none";
+
+          // Export chart as image
+          document.getElementById('exportBtn').addEventListener('click', function() {
+            var url = chart.toBase64Image();
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = 'chart.png';
+            link.click();
+          });
+
+          // Zoom In Button
+          document.getElementById('zoomInBtn').addEventListener('click', function() {
+            chart.zoom(1.2);
+          });
+
+          // Zoom Out Button
+          document.getElementById('zoomOutBtn').addEventListener('click', function() {
+            chart.zoom(0.8);
+          });
+
+          // Reset Zoom Button
+          document.getElementById('resetZoomBtn').addEventListener('click', function() {
+            chart.resetZoom();
+          });
+        });
+      </script>
+    </div>
+  </div>
+</div>
+{% endblock %}
