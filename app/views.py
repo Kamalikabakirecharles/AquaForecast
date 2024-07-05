@@ -468,11 +468,15 @@ def visualization_page(request):
     logger.debug(f"Data fetched: {data.head()}")
 
     visualizations = generate_visualizations(data)
+    forecasted_data = generate_forecast(data)
+
     logger.debug(f"Generated visualizations: {visualizations}")
+    logger.debug(f"Generated forecast: {forecasted_data}")
 
     return render(request, 'visualization.html', {
         'city_name': city_name,
-        'visualizations': json.dumps(visualizations)  # Serialize the visualizations to JSON
+        'visualizations': json.dumps(visualizations),  # Serialize the visualizations to JSON
+        'forecasted_data': json.dumps(forecasted_data)  # Serialize the forecasted data to JSON
     })
 
 def generate_visualizations(data):
@@ -491,6 +495,27 @@ def generate_visualizations(data):
         }
     }
     return visualizations
+
+def generate_forecast(data):
+    forecasted_data = {}
+
+    for column in ['temperature', 'humidity', 'wind_speed']:
+        df = data[['timestamp', column]].rename(columns={'timestamp': 'ds', column: 'y'})
+        df['ds'] = pd.to_datetime(df['ds']).dt.tz_localize(None)  # Remove timezone information
+        model = Prophet()
+        model.fit(df)
+
+        future = model.make_future_dataframe(periods=30)
+        forecast = model.predict(future)
+
+        forecasted_data[column] = {
+            'timestamps': forecast['ds'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'values': forecast['yhat'].tolist()
+        }
+
+    return forecasted_data
+
+
 
 def add_location(request):
     if request.method == 'POST':
@@ -595,15 +620,7 @@ def delete_visualization(request, visualization_id):
     return JsonResponse({'success': False}, status=400)
 
 
-from django.shortcuts import render
-from django.db.models import Exists, OuterRef
-from .models import Location, LocationData
-import pandas as pd
-from prophet import Prophet
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import numpy as np
-
-def historical_analysis(request):
+def forecast_analysis(request):
     # Get locations that have data
     locations_with_data = Location.objects.annotate(
         has_data=Exists(
@@ -653,4 +670,4 @@ def historical_analysis(request):
     context = {
         'location_data': location_data
     }
-    return render(request, 'historical_analysis.html', context)
+    return render(request, 'forecast_analysis.html', context)

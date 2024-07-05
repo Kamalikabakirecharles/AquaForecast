@@ -78,231 +78,253 @@
   </div>
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const visualizations = JSON.parse('{{ visualizations|escapejs }}');
-        
-        if (visualizations) {
-            generateVisualizations(visualizations);
-        }
+  document.addEventListener('DOMContentLoaded', function() {
+    const visualizations = JSON.parse('{{ visualizations|escapejs }}');
+    const forecastedData = JSON.parse('{{ forecasted_data|escapejs }}');
 
-        const toggleButton = document.getElementById('toggleButton');
-        const combinedChartCard = document.getElementById('combinedChartCard');
-        const temperatureChart = document.getElementById('temperatureChart').parentElement.parentElement;
-        const humidityChart = document.getElementById('humidityChart').parentElement.parentElement;
-        const windSpeedChart = document.getElementById('windSpeedChart').parentElement.parentElement;
-
-        toggleButton.addEventListener('click', function() {
-            const isCombinedVisible = combinedChartCard.style.display === 'block';
-
-            if (isCombinedVisible) {
-                combinedChartCard.style.display = 'none';
-                temperatureChart.style.display = 'block';
-                humidityChart.style.display = 'block';
-                windSpeedChart.style.display = 'block';
-                toggleButton.textContent = 'Show Combined Chart';
-            } else {
-                combinedChartCard.style.display = 'block';
-                temperatureChart.style.display = 'none';
-                humidityChart.style.display = 'none';
-                windSpeedChart.style.display = 'none';
-                toggleButton.textContent = 'Show Individual Charts';
-            }
-        });
-    });
-
-    function generateVisualizations(data) {
-      const ctxTemperature = document.getElementById('temperatureChart').getContext('2d');
-      new Chart(ctxTemperature, {
-        type: 'line',
-        data: {
-          labels: data.temperature.timestamps,
-          datasets: [{
-            label: 'Temperature (°C)',
-            data: data.temperature.values,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          scales: {
-            x: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Time'
-              }
-            },
-            y: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Temperature (°C)'
-              }
-            }
-          }
-        }
-      });
-
-      const ctxHumidity = document.getElementById('humidityChart').getContext('2d');
-      new Chart(ctxHumidity, {
-        type: 'line',
-        data: {
-          labels: data.humidity.timestamps,
-          datasets: [{
-            label: 'Humidity (%)',
-            data: data.humidity.values,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          scales: {
-            x: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Time'
-              }
-            },
-            y: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Humidity (%)'
-              }
-            }
-          }
-        }
-      });
-
-      const ctxWindSpeed = document.getElementById('windSpeedChart').getContext('2d');
-      new Chart(ctxWindSpeed, {
-        type: 'line',
-        data: {
-          labels: data.wind_speed.timestamps,
-          datasets: [{
-            label: 'Wind Speed (m/s)',
-            data: data.wind_speed.values,
-            borderColor: 'rgba(255, 206, 86, 1)',
-            backgroundColor: 'rgba(255, 206, 86, 0.2)',
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          scales: {
-            x: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Time'
-              }
-            },
-            y: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Wind Speed (m/s)'
-              }
-            }
-          }
-        }
-      });
-
-      const ctxCombined = document.getElementById('combinedChart').getContext('2d');
-      new Chart(ctxCombined, {
-        type: 'line',
-        data: {
-          labels: data.temperature.timestamps,
-          datasets: [{
-            label: 'Temperature (°C)',
-            data: data.temperature.values,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            fill: true,
-            yAxisID: 'y-temperature'
-          }, {
-            label: 'Humidity (%)',
-            data: data.humidity.values,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            fill: true,
-            yAxisID: 'y-humidity'
-          }, {
-            label: 'Wind Speed (m/s)',
-            data: data.wind_speed.values,
-            borderColor: 'rgba(255, 206, 86, 1)',
-            backgroundColor: 'rgba(255, 206, 86, 0.2)',
-            fill: true,
-            yAxisID: 'y-windSpeed'
-          }]
-        },
-        options: {
-          responsive: true,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          scales: {
-            x: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Time'
-              }
-            },
-            'y-temperature': {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              title: {
-                display: true,
-                text: 'Temperature (°C)'
-              }
-            },
-            'y-humidity': {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              title: {
-                display: true,
-                text: 'Humidity (%)'
-              },
-              grid: {
-                drawOnChartArea: false
-              }
-            },
-            'y-windSpeed': {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              title: {
-                display: true,
-                text: 'Wind Speed (m/s)'
-              },
-              grid: {
-                drawOnChartArea: false
-              }
-            }
-          }
-        }
-      });
+    if (visualizations) {
+        generateVisualizations(visualizations, forecastedData);
     }
+
+    const toggleButton = document.getElementById('toggleButton');
+    const combinedChartCard = document.getElementById('combinedChartCard');
+    const temperatureChart = document.getElementById('temperatureChart').parentElement.parentElement;
+    const humidityChart = document.getElementById('humidityChart').parentElement.parentElement;
+    const windSpeedChart = document.getElementById('windSpeedChart').parentElement.parentElement;
+
+    toggleButton.addEventListener('click', function() {
+        const isCombinedVisible = combinedChartCard.style.display === 'block';
+
+        if (isCombinedVisible) {
+            combinedChartCard.style.display = 'none';
+            temperatureChart.style.display = 'block';
+            humidityChart.style.display = 'block';
+            windSpeedChart.style.display = 'block';
+            toggleButton.textContent = 'Show Combined Chart';
+        } else {
+            combinedChartCard.style.display = 'block';
+            temperatureChart.style.display = 'none';
+            humidityChart.style.display = 'none';
+            windSpeedChart.style.display = 'none';
+            toggleButton.textContent = 'Show Individual Charts';
+        }
+    });
+});
+
+function generateVisualizations(data, forecastedData) {
+  const ctxTemperature = document.getElementById('temperatureChart').getContext('2d');
+  new Chart(ctxTemperature, {
+    type: 'line',
+    data: {
+      labels: data.temperature.timestamps.concat(forecastedData.temperature.timestamps.slice(data.temperature.timestamps.length)),
+      datasets: [{
+        label: 'Historical Temperature (°C)',
+        data: data.temperature.values,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true
+      },
+      {
+        label: 'Forecasted Temperature (°C)',
+        data: new Array(data.temperature.values.length).fill(null).concat(forecastedData.temperature.values.slice(data.temperature.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Temperature (°C)'
+          }
+        }
+      }
+    }
+  });
+
+  const ctxHumidity = document.getElementById('humidityChart').getContext('2d');
+  new Chart(ctxHumidity, {
+    type: 'line',
+    data: {
+      labels: data.humidity.timestamps.concat(forecastedData.humidity.timestamps.slice(data.humidity.timestamps.length)),
+      datasets: [{
+        label: 'Historical Humidity (%)',
+        data: data.humidity.values,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        fill: true
+      },
+      {
+        label: 'Forecasted Humidity (%)',
+        data: new Array(data.humidity.values.length).fill(null).concat(forecastedData.humidity.values.slice(data.humidity.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Humidity (%)'
+          }
+        }
+      }
+    }
+  });
+
+  const ctxWindSpeed = document.getElementById('windSpeedChart').getContext('2d');
+  new Chart(ctxWindSpeed, {
+    type: 'line',
+    data: {
+      labels: data.wind_speed.timestamps.concat(forecastedData.wind_speed.timestamps.slice(data.wind_speed.timestamps.length)),
+      datasets: [{
+        label: 'Historical Wind Speed (m/s)',
+        data: data.wind_speed.values,
+        borderColor: 'rgba(255, 206, 86, 1)',
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        fill: true
+      },
+      {
+        label: 'Forecasted Wind Speed (m/s)',
+        data: new Array(data.wind_speed.values.length).fill(null).concat(forecastedData.wind_speed.values.slice(data.wind_speed.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Wind Speed (m/s)'
+          }
+        }
+      }
+    }
+  });
+
+  const ctxCombined = document.getElementById('combinedChart').getContext('2d');
+  new Chart(ctxCombined, {
+    type: 'line',
+    data: {
+      labels: data.temperature.timestamps.concat(forecastedData.temperature.timestamps.slice(data.temperature.timestamps.length)),
+      datasets: [{
+        label: 'Temperature (°C)',
+        data: data.temperature.values.concat(forecastedData.temperature.values.slice(data.temperature.values.length)),
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true,
+        yAxisID: 'y-temperature'
+      }, {
+        label: 'Humidity (%)',
+        data: data.humidity.values.concat(forecastedData.humidity.values.slice(data.humidity.values.length)),
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        fill: true,
+        yAxisID: 'y-humidity'
+      }, {
+        label: 'Wind Speed (m/s)',
+        data: data.wind_speed.values.concat(forecastedData.wind_speed.values.slice(data.wind_speed.values.length)),
+        borderColor: 'rgba(255, 206, 86, 1)',
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        fill: true,
+        yAxisID: 'y-windSpeed'
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        'y-temperature': {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Temperature (°C)'
+          }
+        },
+        'y-humidity': {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Humidity (%)'
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        },
+        'y-windSpeed': {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Wind Speed (m/s)'
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    }
+  });
+}
 </script>
 {% endblock %}
