@@ -1,7 +1,7 @@
 {% extends "dashboard.html" %}
-{% block title %}AquaForecast | Historical Analysis{% endblock %}
+{% block title %}AquaForecast | Forecast Analysis{% endblock %}
 {% block breadcrumb %}
-<a class="breadcrumb">Historical Analysis</a>
+<a class="breadcrumb">Forecast Analysis</a>
 {% endblock %}
 {% block content %}
 <style>
@@ -81,8 +81,8 @@
 <div class="container">
   <div class="row">
     <div class="col s12">
-      <h4>Historical Analysis</h4>
-      <p>Content for Historical Analysis</p>
+      <h4>Forecast Analysis</h4>
+      <p>Content for Forecast Analysis</p>
       
       <div class="card rounded-corners">
         <div class="card-title">Select Chart Design:</div>
@@ -100,10 +100,20 @@
       <div class="card rounded-corners">
         <div class="card-title">{{ location.name }}</div>
         <div class="card-content">
+          <p>Model: {{ location.data.model }}</p>
+          <p>
+            <a href="#" class="tooltipped" data-position="bottom" data-tooltip="Mean Absolute Error (MAE) measures the average magnitude of the errors in a set of predictions, without considering their direction. It is the average over the test sample of the absolute differences between prediction and actual observation where all individual differences have equal weight.">MAE: {{ location.data.mae }}</a>
+          </p>
+          <p>
+            <a href="#" class="tooltipped" data-position="bottom" data-tooltip="Root Mean Squared Error (RMSE) is the square root of the average of squared differences between prediction and actual observation. It is a measure of how well a regression line fits the data points.">RMSE: {{ location.data.rmse }}</a>
+          </p>
+          <p>
+            <a href="#" class="tooltipped" data-position="bottom" data-tooltip="R-squared (R²) is a statistical measure that represents the proportion of the variance for a dependent variable that's explained by an independent variable or variables in a regression model.">R-squared: {{ location.data.r2 }}</a>
+          </p>
           <canvas id="chart-{{ forloop.counter }}"></canvas>
         </div>
         <div class="card-action">
-          <button class="btn waves-effect waves-light blue" onclick="downloadCSV('{{ location.name }}', {{ location.data.timestamps|safe }}, {{ location.data.values|safe }})">Download Data</button>
+          <button class="btn waves-effect waves-light blue" onclick="downloadCSV('{{ location.name }}', {{ location.data.history_timestamps|safe }}, {{ location.data.history_values|safe }})">Download Data</button>
           <button class="btn waves-effect waves-light blue" id="download-image-{{ forloop.counter }}">Download Image</button>
         </div>
       </div>
@@ -137,6 +147,9 @@
   document.addEventListener('DOMContentLoaded', function() {
     var loader = document.querySelector('.overlay');
     
+    // Show loader on page load
+    loader.style.display = "flex";
+    
     var chartType = 'line';
     document.getElementById('chartType').addEventListener('change', function(event) {
       chartType = event.target.value;
@@ -150,13 +163,22 @@
         type: type,
         data: {
           labels: data.timestamps,
-          datasets: [{
-            label: 'Value',
-            data: data.values,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-            pointRadius: 0 // Hide data points for line and bar charts
-          }]
+          datasets: [
+            {
+              label: 'Forecasted Value',
+              data: data.values,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1,
+              pointRadius: 0 // Hide data points for line and bar charts
+            },
+            {
+              label: 'Historical Value',
+              data: data.history_values,
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1,
+              pointRadius: 0 // Hide data points for line and bar charts
+            }
+          ]
         },
         options: {
           scales: {
@@ -276,6 +298,10 @@
     document.getElementById('resetZoomBtn').addEventListener('click', function() {
       charts.forEach(chart => chart.resetZoom());
     });
+
+    // Initialize tooltips
+    var elems = document.querySelectorAll('.tooltipped');
+    var instances = M.Tooltip.init(elems);
   });
 
   // Function to download data as CSV

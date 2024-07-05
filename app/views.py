@@ -29,8 +29,9 @@ from reportlab.pdfgen import canvas
 from PIL import Image
 from django.shortcuts import get_object_or_404
 from django.db.models import Exists, OuterRef
-from django.utils.dateparse import parse_date
-
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from prophet import Prophet
+import numpy as np
 
 
 
@@ -586,6 +587,22 @@ def generate_location_visualizations(data):
     return visualizations
 
 
+def delete_visualization(request, visualization_id):
+    if request.method == 'DELETE':
+        visualization = get_object_or_404(EDAVisualization, id=visualization_id)
+        visualization.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+from django.shortcuts import render
+from django.db.models import Exists, OuterRef
+from .models import Location, LocationData
+import pandas as pd
+from prophet import Prophet
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
+
 def historical_analysis(request):
     # Get locations that have data
     locations_with_data = Location.objects.annotate(
@@ -598,9 +615,35 @@ def historical_analysis(request):
 
     for location in locations_with_data:
         data = location.data.order_by('timestamp').values('timestamp', 'value')
+        df = pd.DataFrame(list(data))
+
+        # Remove timezone information
+        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize(None)
+
+        # Forecasting with Prophet
+        df.rename(columns={'timestamp': 'ds', 'value': 'y'}, inplace=True)
+        model = Prophet()
+        model.fit(df)
+
+        # Predict future values
+        future = model.make_future_dataframe(periods=365)
+        forecast = model.predict(future)
+
+        # Calculate accuracy metrics on the historical part
+        historical = df.set_index('ds').join(forecast.set_index('ds')[['yhat']], how='left').dropna()
+        mae = mean_absolute_error(historical['y'], historical['yhat'])
+        rmse = np.sqrt(mean_squared_error(historical['y'], historical['yhat']))
+        r2 = r2_score(historical['y'], historical['yhat'])
+
         processed_data = {
-            'timestamps': [entry['timestamp'].strftime('%Y-%m-%dT%H:%M:%S') for entry in data],
-            'values': [entry['value'] for entry in data]
+            'timestamps': forecast['ds'].dt.strftime('%Y-%m-%dT%H:%M:%S').tolist(),
+            'values': forecast['yhat'].tolist(),
+            'history_timestamps': df['ds'].dt.strftime('%Y-%m-%dT%H:%M:%S').tolist(),
+            'history_values': df['y'].tolist(),
+            'model': 'Prophet',
+            'mae': mae,
+            'rmse': rmse,
+            'r2': r2
         }
         location_data.append({
             'name': location.name,
@@ -611,10 +654,3 @@ def historical_analysis(request):
         'location_data': location_data
     }
     return render(request, 'historical_analysis.html', context)
-
-def delete_visualization(request, visualization_id):
-    if request.method == 'DELETE':
-        visualization = get_object_or_404(EDAVisualization, id=visualization_id)
-        visualization.delete()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)

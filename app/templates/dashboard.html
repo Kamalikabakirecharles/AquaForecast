@@ -120,53 +120,53 @@
         border-radius: 8px; /* Adjust the border radius for the entire card */
         overflow: hidden; /* Ensure content within rounded corners respects the border-radius */
       }
-          .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-            backdrop-filter: blur(10px); /* Blur effect */
-            display: none; /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            z-index: 9999; /* Ensure it's on top of other content */
-      }
-      .loader {
-          width: 150px;
-          height: 150px;
-          background-color: #003e78; /* Use the specified color */
-          border-radius: 50%;
-          position: relative;
-          box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
-            0 5px 12px rgba(0, 0, 0, 0.15);
-          overflow: hidden;
-      }
-      .loader:before,
-      .loader:after {
-          content: "";
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 45%;
-          top: -40%;
-          background-color: #fff;
-          animation: wave 5s linear infinite;
-      }
-      .loader:before {
-          border-radius: 30%;
-          background: rgba(255, 255, 255, 0.4);
-          animation: wave 5s linear infinite;
-      }
-      @keyframes wave {
-          0% {
-              transform: rotate(0);
-          }
-          100% {
-              transform: rotate(360deg);
-          }
-      }
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        backdrop-filter: blur(10px); /* Blur effect */
+        display: none; /* Initially hidden */
+        justify-content: center;
+        align-items: center;
+        z-index: 9999; /* Ensure it's on top of other content */
+    }
+    .loader {
+        width: 150px;
+        height: 150px;
+        background-color: #003e78; /* Use the specified color */
+        border-radius: 50%;
+        position: relative;
+        box-shadow: 0 0 30px 4px rgba(0, 0, 0, 0.5) inset,
+          0 5px 12px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+    .loader:before,
+    .loader:after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 45%;
+        top: -40%;
+        background-color: #fff;
+        animation: wave 5s linear infinite;
+    }
+    .loader:before {
+        border-radius: 30%;
+        background: rgba(255, 255, 255, 0.4);
+        animation: wave 5s linear infinite;
+    }
+    @keyframes wave {
+        0% {
+            transform: rotate(0);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
     </style>
   </head>
   <body>
@@ -273,6 +273,9 @@
     </ul>
 
     <main>
+      <div class="overlay"> 
+        <div class="loader"></div> 
+      </div>
       {% block content %}
       <div class="container">
         <div class="row">
@@ -281,7 +284,7 @@
           </div>
         </div>
       </div>
-      {% endblock %}
+      {% endblock %}     
     </main>
 
     <script>
@@ -290,7 +293,18 @@
         $(".collapsible").collapsible();
         $("select").formSelect();
         $(".dropdown-trigger").dropdown();
+    
+        // Show loader when navigation links are clicked
+        $(".sidenav a").on("click", function () {
+          var loader = document.querySelector('.overlay');
+            loader.style.display = "flex";
+        });
+    
+        // Hide loader after page is loaded
+        $(window).on("load", function () {
+          loader.style.display = 'none';
+        });
       });
-    </script>
+    </script>   
   </body>
 </html>
