@@ -253,24 +253,45 @@ function generateVisualizations(data, forecastedData) {
     data: {
       labels: data.temperature.timestamps.concat(forecastedData.temperature.timestamps.slice(data.temperature.timestamps.length)),
       datasets: [{
-        label: 'Temperature (°C)',
-        data: data.temperature.values.concat(forecastedData.temperature.values.slice(data.temperature.values.length)),
+        label: 'Historical Temperature (°C)',
+        data: data.temperature.values,
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
         yAxisID: 'y-temperature'
       }, {
-        label: 'Humidity (%)',
-        data: data.humidity.values.concat(forecastedData.humidity.values.slice(data.humidity.values.length)),
+        label: 'Forecasted Temperature (°C)',
+        data: new Array(data.temperature.values.length).fill(null).concat(forecastedData.temperature.values.slice(data.temperature.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true,
+        yAxisID: 'y-temperature'
+      }, {
+        label: 'Historical Humidity (%)',
+        data: data.humidity.values,
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,
         yAxisID: 'y-humidity'
       }, {
-        label: 'Wind Speed (m/s)',
-        data: data.wind_speed.values.concat(forecastedData.wind_speed.values.slice(data.wind_speed.values.length)),
+        label: 'Forecasted Humidity (%)',
+        data: new Array(data.humidity.values.length).fill(null).concat(forecastedData.humidity.values.slice(data.humidity.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true,
+        yAxisID: 'y-humidity'
+      }, {
+        label: 'Historical Wind Speed (m/s)',
+        data: data.wind_speed.values,
         borderColor: 'rgba(255, 206, 86, 1)',
         backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        fill: true,
+        yAxisID: 'y-windSpeed'
+      }, {
+        label: 'Forecasted Wind Speed (m/s)',
+        data: new Array(data.wind_speed.values.length).fill(null).concat(forecastedData.wind_speed.values.slice(data.wind_speed.values.length)),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
         fill: true,
         yAxisID: 'y-windSpeed'
       }]
@@ -322,9 +343,30 @@ function generateVisualizations(data, forecastedData) {
             drawOnChartArea: false
           }
         }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(tooltipItem) {
+              let label = tooltipItem.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              label += Math.round(tooltipItem.raw * 100) / 100;
+              return label;
+            }
+          }
+        }
       }
     }
   });
 }
 </script>
 {% endblock %}
+

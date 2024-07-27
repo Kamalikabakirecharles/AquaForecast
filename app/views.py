@@ -498,14 +498,19 @@ def generate_visualizations(data):
 
 def generate_forecast(data):
     forecasted_data = {}
+    periods = 14  # Shorter forecast period for higher accuracy
 
     for column in ['temperature', 'humidity', 'wind_speed']:
         df = data[['timestamp', column]].rename(columns={'timestamp': 'ds', column: 'y'})
         df['ds'] = pd.to_datetime(df['ds']).dt.tz_localize(None)  # Remove timezone information
-        model = Prophet()
+        model = Prophet(
+            changepoint_prior_scale=0.075,
+            seasonality_prior_scale=10.0,
+            daily_seasonality=False
+        )
         model.fit(df)
 
-        future = model.make_future_dataframe(periods=30)
+        future = model.make_future_dataframe(periods=periods)
         forecast = model.predict(future)
 
         forecasted_data[column] = {
@@ -514,7 +519,6 @@ def generate_forecast(data):
         }
 
     return forecasted_data
-
 
 
 def add_location(request):
