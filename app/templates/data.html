@@ -150,7 +150,22 @@
   .location-data-table {
     margin-left: 40px;
   }
-  
+  .button-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px; /* Add some spacing between the rows */
+  }
+
+  .button-row .btn {
+    flex: 1;
+    margin-right: 5px; /* Add some spacing between the buttons */
+  }
+
 </style>
 <div class="container">
   <div class="row">
@@ -216,20 +231,29 @@
                   <td>{{ location.latitude }}</td>
                   <td>{{ location.srid }}</td>
                   <td class="action-row">
-                    <form id="deleteForm" action="{% url 'delete_location' %}" method="post">
-                      {% csrf_token %}
-                      <input type="hidden" name="location_id" value="{{ location.id }}">
-                      <button type="submit" class="btn waves-effect waves-light green modal-trigger">
-                          <i class="material-icons icon-button white-text">delete</i>
-                      </button>
-                    </form>
-                    <button class="btn waves-effect waves-light green open-add-data-modal" data-location-id="{{ location.id }}">
-                      <i class="material-icons icon-button white-text">add</i>
-                    </button>
-                    <button class="btn waves-effect waves-light blue fetch-location-data" data-location-id="{{ location.id }}">
-                      <i class="material-icons icon-button white-text">expand_more</i>
-                    </button>
-                  </td>              
+                    <div class="button-group">
+                      <div class="button-row">
+                        <form id="deleteForm" action="{% url 'delete_location' %}" method="post">
+                          {% csrf_token %}
+                          <input type="hidden" name="location_id" value="{{ location.id }}">
+                          <button type="submit" class="btn waves-effect waves-light green modal-trigger">
+                            <i class="material-icons icon-button white-text">delete</i>
+                          </button>
+                        </form>
+                        <button class="btn waves-effect waves-light green open-add-data-modal" data-location-id="{{ location.id }}">
+                          <i class="material-icons icon-button white-text">add</i>
+                        </button>
+                      </div>
+                      <div class="button-row">
+                        <button class="btn waves-effect waves-light blue fetch-location-data" data-location-id="{{ location.id }}">
+                          <i class="material-icons icon-button white-text">expand_more</i>
+                        </button>
+                        <button class="btn waves-effect waves-light blue download-location-data" data-location-id="{{ location.id }}">
+                          <i class="material-icons icon-button white-text">file_download</i>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
                 <tr class="location-data-row" id="location-data-{{ location.id }}">
                   <td colspan="7">
@@ -443,15 +467,68 @@
         });
       }
     });
+
+    // Handle the click event for the add data button
+    $('.open-add-data-modal').on('click', function() {
+      var locationId = $(this).data('location-id');
+      $('#location_data_location_id').val(locationId).focus();
+      var instance = M.Modal.getInstance(document.getElementById('addDataModal'));
+      instance.open();
+    });
+
+    // Handle the click event for the download data button
+    $('.download-location-data').on('click', function() {
+      var locationId = $(this).data('location-id');
+      var locationDataRow = $('#location-data-' + locationId);
+      if (locationDataRow.is(':visible')) {
+        downloadCSV(locationId);
+      } else {
+        var loader = document.querySelector('.overlay');
+        loader.style.display = "flex"; // Show loader before AJAX request
+        $.ajax({
+          url: '{% url "get_location_data" %}',
+          method: 'POST',
+          data: {
+            location_id: locationId,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+          },
+          success: function(response) {
+            var tbody = $('#location-data-body-' + locationId);
+            tbody.empty();
+            response.data.forEach(function(data) {
+              tbody.append('<tr><td>' + data.timestamp + '</td><td>' + data.value + '</td></tr>');
+            });
+            locationDataRow.show();
+            var loader = document.querySelector('.overlay');
+            loader.style.display = "none"; // Hide loader after successful AJAX request
+            downloadCSV(locationId);
+          },
+          error: function() {
+            M.toast({html: 'Failed to fetch location data', classes: 'toast-error'});
+            var loader = document.querySelector('.overlay');
+            loader.style.display = "none"; // Hide loader after successful AJAX request
+          }
+        });
+      }
+    });
   });
 
-  // Handle the click event for the add data button
-  $('.open-add-data-modal').on('click', function() {
-    var locationId = $(this).data('location-id');
-    $('#location_data_location_id').val(locationId).focus();
-    var instance = M.Modal.getInstance(document.getElementById('addDataModal'));
-    instance.open();
-  });
+  function downloadCSV(locationId) {
+    var csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Timestamp,Value\n";
+    $('#location-data-body-' + locationId + ' tr').each(function() {
+      var row = $(this).find('td');
+      csvContent += row.eq(0).text() + ',' + row.eq(1).text() + '\n';
+    });
+
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'location_data_' + locationId + '.csv');
+    document.body.appendChild(link);
+
+    link.click();
+  }
 
   $(".dropdown-trigger").dropdown();
 </script>
